@@ -130,6 +130,10 @@ Cyclic messages are sent by ODrive on a timer without a request. As of firmware 
      - Get Bus Voltage Current
      - `bus_vi_rate_ms`
      - 0
+   * - 0x1E
+     - Get Temperature Current
+     - `temperature_rate_ms`
+     - 0
 
 
 .. ID | Name | Rate (ms)

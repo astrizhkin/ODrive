@@ -225,7 +225,7 @@ for axisID in range(0, 8):
 from itertools import chain
 msgList = list(chain.from_iterable(msgList))
 
-db = can.Database(msgList, nodes, buses, version='0.5.6')
+db = can.Database(msgList, nodes, buses, version='0.5.7')
 
 dump_file(db, "odrive-cansimple.dbc")
 db = load_file("odrive-cansimple.dbc")

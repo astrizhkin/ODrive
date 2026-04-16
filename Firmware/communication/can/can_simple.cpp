@@ -229,8 +229,11 @@ bool CANSimple::get_temperature_callback(const Axis& axis) {
     txmsg.isExt = axis.config_.can.is_extended;
     txmsg.len = 8;
 
-    can_setSignal(txmsg, axis.motor_.fet_thermistor_.temperature_, 0, 32, true);
-    can_setSignal(txmsg, axis.motor_.motor_thermistor_.temperature_, 32, 32, true);
+    static_assert(sizeof(float) == sizeof(axis.motor_.fet_thermistor_.temperature_));
+    static_assert(sizeof(float) == sizeof(axis.motor_.motor_thermistor_.temperature_));
+
+    can_setSignal<float>(txmsg, axis.motor_.fet_thermistor_.temperature_, 0, 32, true);
+    can_setSignal<float>(txmsg, axis.motor_.motor_thermistor_.temperature_, 32, 32, true);
 
     return canbus_->send_message(txmsg);
 }

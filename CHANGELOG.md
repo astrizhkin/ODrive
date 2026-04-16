@@ -1,4 +1,11 @@
 
+## [0.5.7] - 2026-04-15
+
+Command ID | Rate Variable | Message Name
+:-- | :-- | :--
+ 0x1E | `temperature_rate_ms` | Get Temperature
+
+
 ## [0.5.6] - 2023-04-29
 
 ### Fixed
@@ -30,6 +37,7 @@ Command ID | Rate Variable | Message Name
  0x14 | `iq_rate_ms` | Get Iq
  0x15 | `sensorless_rate_ms` | Get Sensorless Estimates
  0x17 | `bus_vi_rate_ms` | Get Bus Voltage Current
+ 0x1E | `temperature_rate_ms` | Get Temperature
 
 ### Changed
 
