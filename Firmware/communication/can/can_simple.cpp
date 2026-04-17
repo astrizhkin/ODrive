@@ -134,7 +134,7 @@ void CANSimple::do_command(Axis& axis, const can_Message_t& msg) {
                 get_sensorless_estimates_callback(axis);
             break;
         case MSG_RESET_ODRIVE:
-            NVIC_SystemReset();
+            reboot_callback(axis, msg);
             break;
         case MSG_GET_BUS_VOLTAGE_CURRENT:
             if (msg.rtr || msg.len == 0)
@@ -399,6 +399,21 @@ bool CANSimple::get_adc_voltage_callback(const Axis& axis, const can_Message_t& 
         return canbus_->send_message(txmsg);
     } else {
         return false;
+    }
+}
+
+void  CANSimple::reboot_callback(const Axis& axis, const can_Message_t& msg) {
+    if(msg.len == 1) {
+        auto action = can_getSignal<uint8_t>(msg, 0, 8, true);
+        if (action == 0) {
+            odrv.reboot();
+        } else if(action == 1) {
+            odrv.save_configuration();
+        } else if(action == 2) {
+            odrv.erase_configuration();
+        }
+    } else {
+        NVIC_SystemReset();
     }
 }
 

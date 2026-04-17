@@ -90,6 +90,7 @@ class CANSimple {
     static void estop_callback(Axis& axis, const can_Message_t& msg);
     static void clear_errors_callback(Axis& axis, const can_Message_t& msg);
     static void start_anticogging_callback(const Axis& axis, const can_Message_t& msg);
+    static void reboot_callback(const Axis& axis, const can_Message_t& msg) {
 
     static constexpr uint8_t NUM_NODE_ID_BITS = 6;
     static constexpr uint8_t NUM_CMD_ID_BITS = 11 - NUM_NODE_ID_BITS;
