@@ -402,7 +402,7 @@ bool CANSimple::get_adc_voltage_callback(const Axis& axis, const can_Message_t& 
     }
 }
 
-void  CANSimple::reboot_callback(const Axis& axis, const can_Message_t& msg) {
+void  CANSimple::reboot_callback(Axis& axis, const can_Message_t& msg) {
     if(msg.len == 1) {
         auto action = can_getSignal<uint8_t>(msg, 0, 8, true);
         if (action == 0) {
