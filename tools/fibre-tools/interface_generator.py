@@ -6,8 +6,32 @@ import jinja2
 import jsonschema
 import re
 import argparse
+import os
+import re
 import sys
 from collections import OrderedDict
+
+def read_version_c(path):
+    """Parse autogen/version.c produced by tools/odrive/version.py."""
+    major = minor = revision = 0
+    unreleased = 0
+    try:
+        with open(path, 'r') as f:
+            content = f.read()
+        m = re.search(r'fw_version_major_\s*=\s*(\d+)', content)
+        if m: major = int(m.group(1))
+        m = re.search(r'fw_version_minor_\s*=\s*(\d+)', content)
+        if m: minor = int(m.group(1))
+        m = re.search(r'fw_version_revision_\s*=\s*(\d+)', content)
+        if m: revision = int(m.group(1))
+        m = re.search(r'fw_version_unreleased_\s*=\s*(\d+)', content)
+        if m: unreleased = int(m.group(1))
+    except FileNotFoundError:
+        return None
+    version = '{}.{}.{}'.format(major, minor, revision)
+    if unreleased:
+        version += '-dev'
+    return version
 
 # This schema describes what we expect interface definition files to look like
 validator = jsonschema.Draft4Validator(yaml.safe_load("""
@@ -561,6 +585,10 @@ parser.add_argument("--generate-endpoints", type=str, nargs='?',
                     help="if specified, an endpoint table will be generated and passed to the template for the specified interface")
 parser.add_argument("--json-output", type=str,
                     help="path to write flat_endpoints.json alongside endpoints.hpp")
+parser.add_argument("--fw-version", type=str, default=None,
+                    help="firmware version string for flat_endpoints.json")
+parser.add_argument("--hw-version", type=str, default=None,
+                    help="hardware version string for flat_endpoints.json")
 args = parser.parse_args()
 
 if args.version:
@@ -653,7 +681,9 @@ if args.generate_endpoints:
 
     # Also write flat_endpoints.json with the same ID system (for Python scripts)
     if args.json_output:
-        flat = {'endpoints': {}, 'fw_version': '0.5.7', 'hw_version': '4.4.58'}
+        fw_version = args.fw_version or read_version_c(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'Firmware', 'autogen', 'version.c')) or '0.0.0'
+        hw_version = args.hw_version or userdata.get('hw_version') or '0.0.0'
+        flat = {'endpoints': {}, 'fw_version': fw_version, 'hw_version': hw_version}
         for ep in embedded_endpoint_definitions:
             if ep.get('type') in ('json', 'object', 'function'):
                 continue  # skip non-leaf entries

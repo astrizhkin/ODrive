@@ -496,7 +496,7 @@ uint32_t CANSimple::service_stack() {
     };
 
     for (auto& axis : axes) {
-        std::array<periodic, 11> periodics = {{
+        std::array<periodic, 9> periodics = {{
             {axis.config_.can.heartbeat_rate_ms, axis.can_.last_heartbeat, &CANSimple::send_heartbeat},
             {axis.config_.can.encoder_rate_ms, axis.can_.last_encoder, &CANSimple::get_encoder_estimates_callback},
             {axis.config_.can.motor_error_rate_ms, axis.can_.last_motor_error, &CANSimple::get_motor_error_callback},

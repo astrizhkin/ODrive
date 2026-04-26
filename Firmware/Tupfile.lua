@@ -422,7 +422,7 @@ print('Using python command "'..python_command..'"')
 root_interface = board.include[1].root_interface
 tup.frule{inputs={'fibre-cpp/interfaces_template.j2', extra_inputs='odrive-interface.yaml'}, command=python_command..' interface_generator_stub.py --definitions odrive-interface.yaml --template %f --output %o', outputs='autogen/interfaces.hpp'}
 tup.frule{inputs={'fibre-cpp/function_stubs_template.j2', extra_inputs='odrive-interface.yaml'}, command=python_command..' interface_generator_stub.py --definitions odrive-interface.yaml --template %f --output %o', outputs='autogen/function_stubs.hpp'}
-tup.frule{inputs={'fibre-cpp/endpoints_template.j2', extra_inputs='odrive-interface.yaml'}, command=python_command..' interface_generator_stub.py --definitions odrive-interface.yaml --generate-endpoints '..root_interface..' --json-output autogen/flat_endpoints.json --template %f --output %o', outputs='autogen/endpoints.hpp', extra_outputs='autogen/flat_endpoints.json'}
+tup.frule{inputs={'fibre-cpp/endpoints_template.j2', extra_inputs='odrive-interface.yaml'}, command=python_command..' interface_generator_stub.py --definitions odrive-interface.yaml --generate-endpoints '..root_interface..' --json-output autogen/flat_endpoints.json --hw-version '..boardversion..' --template %f --output %o', outputs='autogen/endpoints.hpp', extra_outputs='autogen/flat_endpoints.json'}
 tup.frule{inputs={'fibre-cpp/type_info_template.j2', extra_inputs='odrive-interface.yaml'}, command=python_command..' interface_generator_stub.py --definitions odrive-interface.yaml --template %f --output %o', outputs='autogen/type_info.hpp'}
 
 add_pkg(board)
