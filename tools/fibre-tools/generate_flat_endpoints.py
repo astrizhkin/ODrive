@@ -438,7 +438,7 @@ def write_cpp_header(endpoints, output_path):
 #include <cstdint>
 
 struct EndpointInfo {{
-    uint8_t id;
+    uint16_t id;
     uint8_t byte_size;
     uint8_t type_code;   // 0=bool, 1=uint8, 2=int8, 3=uint16, 4=int16, 5=uint32, 6=int32, 7=float, 8=uint64, 9=int64
     uint8_t access;      // 0=rw, 1=ro
