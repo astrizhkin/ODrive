@@ -256,30 +256,13 @@ void CANSimple::can_sdo_rx_callback(Axis& axis, const can_Message_t& msg) {
         }
     }
 
-    Introspectable property{};
-    fibre::get_property(property, endpoint_id);
-    if (!property.is_valid()) {
-        can_Message_t txmsg;
-        txmsg.id = (axis.config_.can.node_id << NUM_CMD_ID_BITS) | MSG_CAN_SDO_TX;
-        txmsg.isExt = axis.config_.can.is_extended;
-        txmsg.len = 8;
-        txmsg.buf[0] = 0x06;
-        txmsg.buf[1] = static_cast<uint8_t>(endpoint_id);
-        txmsg.buf[2] = static_cast<uint8_t>(endpoint_id >> 8);
-        txmsg.buf[3] = 0;
-        canbus_->send_message(txmsg);
-        return;
-    }
-
-    const StringConvertibleTypeInfo* type_info =
-        dynamic_cast<const StringConvertibleTypeInfo*>(property.get_type_info());
-
+    // Execute endpoint operation
     char read_buf[16] = {0};
     bool success = false;
-    if (opcode == 0x00 && type_info) {
-        success = type_info->get_string(property, read_buf, sizeof(read_buf));
-    } else if (opcode == 0x01 && type_info) {
-        success = type_info->set_string(property, write_buf, strlen(write_buf));
+    if (opcode == 0x00) {
+        success = sdo_get_property(endpoint_id, read_buf, sizeof(read_buf));
+    } else {
+        success = sdo_set_property(endpoint_id, write_buf, strlen(write_buf));
     }
 
     // Build response

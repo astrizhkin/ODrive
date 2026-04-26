@@ -90,6 +90,12 @@ class CANSimple {
     // SDO handler
     void can_sdo_rx_callback(Axis& axis, const can_Message_t& msg);
 
+    // SDO endpoint access - implemented in communication.cpp
+    // Reads property value as string into out_buf. Returns true on success.
+    static bool sdo_get_property(uint16_t endpoint_id, char* out_buf, size_t out_size);
+    // Writes property value from value_buf. Returns true on success.
+    static bool sdo_set_property(uint16_t endpoint_id, const char* value, size_t len);
+
     // Other functions
     static void nmt_callback(const Axis& axis, const can_Message_t& msg);
     static void estop_callback(Axis& axis, const can_Message_t& msg);
