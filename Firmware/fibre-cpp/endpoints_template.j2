@@ -26,6 +26,9 @@
 #pragma GCC push_options
 #pragma GCC optimize ("s")
 
+class ODrive;
+extern ODrive& ep_root;
+
 namespace fibre {
 
 const unsigned char embedded_json[] = [[embedded_endpoint_definitions | to_c_string]];
