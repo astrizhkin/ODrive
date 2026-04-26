@@ -11,8 +11,10 @@ class CANSimple {
         MSG_ODRIVE_HEARTBEAT,
         MSG_ODRIVE_ESTOP,
         MSG_GET_MOTOR_ERROR,  // Errors
-        MSG_GET_ENCODER_ERROR,
-        MSG_GET_SENSORLESS_ERROR,
+        MSG_CAN_SDO_RX,
+        MSG_CAN_SDO_TX,
+        //MSG_GET_ENCODER_ERROR,
+        //MSG_GET_SENSORLESS_ERROR,
         MSG_SET_AXIS_NODE_ID,
         MSG_SET_AXIS_REQUESTED_STATE,
         MSG_SET_AXIS_STARTUP_CONFIG,
@@ -84,6 +86,9 @@ class CANSimple {
     static void set_linear_count_callback(Axis& axis, const can_Message_t& msg);
     static void set_pos_gain_callback(Axis& axis, const can_Message_t& msg);
     static void set_vel_gains_callback(Axis& axis, const can_Message_t& msg);
+
+    // SDO handler
+    void can_sdo_rx_callback(Axis& axis, const can_Message_t& msg);
 
     // Other functions
     static void nmt_callback(const Axis& axis, const can_Message_t& msg);
