@@ -89,4 +89,54 @@ bool set_endpoint_from_float(endpoint_ref_t endpoint_ref, float value) {
 
 #pragma GCC pop_options
 
+// Endpoint metadata table for CAN Simple SDO (outside fibre namespace)
+
+enum EndpointTypeCode : uint8_t {
+    TYPE_BOOL = 0,
+    TYPE_UINT8 = 1,
+    TYPE_INT8 = 2,
+    TYPE_UINT16 = 3,
+    TYPE_INT16 = 4,
+    TYPE_UINT32 = 5,
+    TYPE_INT32 = 6,
+    TYPE_FLOAT = 7,
+    TYPE_UINT64 = 8,
+    TYPE_INT64 = 9,
+};
+
+enum EndpointAccess : uint8_t {
+    ACCESS_RW = 0,
+    ACCESS_RO = 1,
+};
+
+struct EndpointInfo {
+    uint16_t id;
+    uint8_t byte_size;
+    uint8_t type_code;
+    uint8_t access;
+};
+
+extern const EndpointInfo endpoint_table[];
+extern const size_t endpoint_table_size;
+
+static inline const EndpointInfo* find_endpoint_by_id(uint16_t id) {
+    size_t lo = 0, hi = endpoint_table_size;
+    while (lo < hi) {
+        size_t mid = (lo + hi) >> 1;
+        if (endpoint_table[mid].id == id) return &endpoint_table[mid];
+        if (endpoint_table[mid].id < id) lo = mid + 1;
+        else hi = mid;
+    }
+    return nullptr;
+}
+
+const EndpointInfo endpoint_table[] = {
+[%- for ep in embedded_endpoint_definitions %]
+[%- if ep.type != 'json' %]
+    {[[ep.id]], [[ep.type | byte_size]], [[ep.type | type_code]], [[0 if ep.access == 'rw' else 1]]},
+[%- endif %]
+[%- endfor %]
+};
+const size_t endpoint_table_size = sizeof(endpoint_table) / sizeof(endpoint_table[0]);
+
 #endif // __FIBRE_ENDPOINTS_HPP

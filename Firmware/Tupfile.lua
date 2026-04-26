@@ -422,15 +422,8 @@ print('Using python command "'..python_command..'"')
 root_interface = board.include[1].root_interface
 tup.frule{inputs={'fibre-cpp/interfaces_template.j2', extra_inputs='odrive-interface.yaml'}, command=python_command..' interface_generator_stub.py --definitions odrive-interface.yaml --template %f --output %o', outputs='autogen/interfaces.hpp'}
 tup.frule{inputs={'fibre-cpp/function_stubs_template.j2', extra_inputs='odrive-interface.yaml'}, command=python_command..' interface_generator_stub.py --definitions odrive-interface.yaml --template %f --output %o', outputs='autogen/function_stubs.hpp'}
-tup.frule{inputs={'fibre-cpp/endpoints_template.j2', extra_inputs='odrive-interface.yaml'}, command=python_command..' interface_generator_stub.py --definitions odrive-interface.yaml --generate-endpoints '..root_interface..' --template %f --output %o', outputs='autogen/endpoints.hpp'}
+tup.frule{inputs={'fibre-cpp/endpoints_template.j2', extra_inputs='odrive-interface.yaml'}, command=python_command..' interface_generator_stub.py --definitions odrive-interface.yaml --generate-endpoints '..root_interface..' --json-output autogen/flat_endpoints.json --template %f --output %o', outputs='autogen/endpoints.hpp', extra_outputs='autogen/flat_endpoints.json'}
 tup.frule{inputs={'fibre-cpp/type_info_template.j2', extra_inputs='odrive-interface.yaml'}, command=python_command..' interface_generator_stub.py --definitions odrive-interface.yaml --template %f --output %o', outputs='autogen/type_info.hpp'}
-
--- Generate flat endpoint table from YAML (for CAN Simple SDO)
-tup.frule{
-    extra_inputs={'odrive-interface.yaml'},
-    command=python_command..' ../tools/fibre-tools/generate_flat_endpoints.py --definitions odrive-interface.yaml --output %o',
-    outputs={'autogen/flat_endpoints.json', extra_outputs={'autogen/flat_endpoints.hpp'}}
-}
 
 add_pkg(board)
 add_pkg(freertos_pkg)

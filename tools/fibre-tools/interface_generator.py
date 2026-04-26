@@ -559,6 +559,8 @@ group.add_argument("--outputs", type=str,
                     help="path pattern for the generated outputs. One output is generated for each interface. Use # as placeholder for the interface name.")
 parser.add_argument("--generate-endpoints", type=str, nargs='?',
                     help="if specified, an endpoint table will be generated and passed to the template for the specified interface")
+parser.add_argument("--json-output", type=str,
+                    help="path to write flat_endpoints.json alongside endpoints.hpp")
 args = parser.parse_args()
 
 if args.version:
@@ -648,6 +650,16 @@ if args.generate_endpoints:
     endpoints, embedded_endpoint_definitions, _ = generate_endpoint_table(interfaces[args.generate_endpoints], '&ep_root', 1) # TODO: make user-configurable
     embedded_endpoint_definitions = [{'name': '', 'id': 0, 'type': 'json', 'access': 'r'}] + embedded_endpoint_definitions
     endpoints = [{'id': 0, 'function': {'fullname': 'endpoint0_handler', 'in': {}, 'out': {}}, 'bindings': {}}] + endpoints
+
+    # Also write flat_endpoints.json with the same ID system (for Python scripts)
+    if args.json_output:
+        flat = {'endpoints': {}, 'fw_version': '0.5.7', 'hw_version': '4.4.58'}
+        for ep in embedded_endpoint_definitions:
+            if ep['type'] == 'json':
+                continue  # skip sentinel
+            flat['endpoints'][ep['name']] = {'id': ep['id'], 'type': ep['type'], 'access': ep['access']}
+        with open(args.json_output, 'w', encoding='utf-8') as f:
+            json.dump(flat, f, indent=2)
 else:
     embedded_endpoint_definitions = None
     endpoints = None
@@ -730,6 +742,22 @@ env.filters['tokenize'] = tokenize
 env.filters['html_escape'] = html_escape
 env.filters['diagonalize'] = lambda lst: [lst[:i + 1] for i in range(len(lst))]
 env.filters['debug'] = lambda x: print(x)
+
+# Type code mapping for endpoint metadata table (used in endpoints_template.j2)
+TYPE_CODE_MAP = {
+    'bool': 0, 'uint8': 1, 'int8': 2,
+    'uint16': 3, 'int16': 4,
+    'uint32': 5, 'int32': 6, 'float': 7,
+    'uint64': 8, 'int64': 9,
+}
+BYTE_SIZE_MAP = {
+    'bool': 1, 'uint8': 1, 'int8': 1,
+    'uint16': 2, 'int16': 2,
+    'uint32': 4, 'int32': 4, 'float': 4,
+    'uint64': 8, 'int64': 8,
+}
+env.filters['type_code'] = lambda t: TYPE_CODE_MAP.get(t, 0)
+env.filters['byte_size'] = lambda t: BYTE_SIZE_MAP.get(t, 1)
 
 template = env.from_string(template_file.read())
 
