@@ -655,8 +655,8 @@ if args.generate_endpoints:
     if args.json_output:
         flat = {'endpoints': {}, 'fw_version': '0.5.7', 'hw_version': '4.4.58'}
         for ep in embedded_endpoint_definitions:
-            if ep['type'] == 'json':
-                continue  # skip sentinel
+            if ep.get('type') in ('json', 'object', 'function'):
+                continue  # skip non-leaf entries
             flat['endpoints'][ep['name']] = {'id': ep['id'], 'type': ep['type'], 'access': ep['access']}
         with open(args.json_output, 'w', encoding='utf-8') as f:
             json.dump(flat, f, indent=2)

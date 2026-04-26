@@ -132,7 +132,7 @@ static inline const EndpointInfo* find_endpoint_by_id(uint16_t id) {
 
 const EndpointInfo endpoint_table[] = {
 [%- for ep in embedded_endpoint_definitions %]
-[%- if ep.type != 'json' %]
+[%- if ep.type not in ('json', 'object', 'function') %]
     {[[ep.id]], [[ep.type | byte_size]], [[ep.type | type_code]], [[0 if ep.access == 'rw' else 1]]},
 [%- endif %]
 [%- endfor %]
