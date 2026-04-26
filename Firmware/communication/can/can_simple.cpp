@@ -3,9 +3,6 @@
 
 #include <odrive_main.h>
 #include <functional>
-#include <autogen/type_info.hpp>
-#include <fibre/introspection.hpp>
-#include <autogen/endpoints.hpp>
 
 bool CANSimple::init() {
     for (size_t i = 0; i < AXIS_COUNT; ++i) {
@@ -176,88 +173,21 @@ void CANSimple::do_command(Axis& axis, const can_Message_t& msg) {
 }
 
 void CANSimple::can_sdo_rx_callback(Axis& axis, const can_Message_t& msg) {
-    // SDO frame layout (matches Python struct '<BHB' + type):
-    // Request:  [opcode:1B][endpoint_id:2B][reserved:1B][value:varies]
-    // Response: [return_code:1B][endpoint_id:2B][reserved:1B][value:varies]
+    // SDO frame layout (fixed 4-byte value field):
+    // Request:  [opcode:1B][endpoint_id:2B][reserved:1B][value:4B]
+    // Response: [return_code:1B][endpoint_id:2B][reserved:1B][value:4B]
     uint8_t opcode = msg.buf[0];
     uint16_t endpoint_id;
     std::memcpy(&endpoint_id, &msg.buf[1], sizeof(endpoint_id));
 
-    // Look up endpoint in flat table
-    const EndpointInfo* ep_info = find_endpoint_by_id(endpoint_id);
-    if (!ep_info) {
-        can_Message_t txmsg;
-        txmsg.id = (axis.config_.can.node_id << NUM_CMD_ID_BITS) | MSG_CAN_SDO_TX;
-        txmsg.isExt = axis.config_.can.is_extended;
-        txmsg.len = 8;
-        txmsg.buf[0] = 0x06;  // error: out of range / not found
-        txmsg.buf[1] = static_cast<uint8_t>(endpoint_id);
-        txmsg.buf[2] = static_cast<uint8_t>(endpoint_id >> 8);
-        txmsg.buf[3] = 0;
-        canbus_->send_message(txmsg);
-        return;
-    }
-
-    // 64-bit values don't fit in 8-byte CAN frame with header
-    if (ep_info->byte_size == 8) {
-        can_Message_t txmsg;
-        txmsg.id = (axis.config_.can.node_id << NUM_CMD_ID_BITS) | MSG_CAN_SDO_TX;
-        txmsg.isExt = axis.config_.can.is_extended;
-        txmsg.len = 8;
-        txmsg.buf[0] = 0x06;  // value too large for CAN
-        txmsg.buf[1] = static_cast<uint8_t>(endpoint_id);
-        txmsg.buf[2] = static_cast<uint8_t>(endpoint_id >> 8);
-        txmsg.buf[3] = 0;
-        canbus_->send_message(txmsg);
-        return;
-    }
-
-    // Read-only check
-    if (opcode == 0x01 && ep_info->access == 1) {
-        can_Message_t txmsg;
-        txmsg.id = (axis.config_.can.node_id << NUM_CMD_ID_BITS) | MSG_CAN_SDO_TX;
-        txmsg.isExt = axis.config_.can.is_extended;
-        txmsg.len = 8;
-        txmsg.buf[0] = 0x06;  // access denied
-        txmsg.buf[1] = static_cast<uint8_t>(endpoint_id);
-        txmsg.buf[2] = static_cast<uint8_t>(endpoint_id >> 8);
-        txmsg.buf[3] = 0;
-        canbus_->send_message(txmsg);
-        return;
-    }
-
-    // Build value string for write
-    char write_buf[16] = {0};
+    // Build string from CAN value bytes for write
+    char write_buf[5] = {0};
     if (opcode == 0x01) {
-        switch (ep_info->byte_size) {
-            case 1: {
-                uint8_t val = msg.buf[4];
-                snprintf(write_buf, sizeof(write_buf), "%u", val);
-                break;
-            }
-            case 2: {
-                uint16_t val;
-                std::memcpy(&val, &msg.buf[4], sizeof(val));
-                snprintf(write_buf, sizeof(write_buf), "%u", val);
-                break;
-            }
-            case 4: {
-                if (ep_info->type_code == 7) {  // float
-                    float val;
-                    std::memcpy(&val, &msg.buf[4], sizeof(val));
-                    snprintf(write_buf, sizeof(write_buf), "%f", (double)val);
-                } else {
-                    uint32_t val;
-                    std::memcpy(&val, &msg.buf[4], sizeof(val));
-                    snprintf(write_buf, sizeof(write_buf), "%u", (unsigned int)val);
-                }
-                break;
-            }
-        }
+        std::memcpy(write_buf, &msg.buf[4], 4);
     }
 
     // Execute endpoint operation
-    char read_buf[16] = {0};
+    char read_buf[5] = {0};
     bool success = false;
     if (opcode == 0x00) {
         success = sdo_get_property(endpoint_id, read_buf, sizeof(read_buf));
@@ -285,45 +215,9 @@ void CANSimple::can_sdo_rx_callback(Axis& axis, const can_Message_t& msg) {
     txmsg.buf[2] = static_cast<uint8_t>(endpoint_id >> 8);
     txmsg.buf[3] = 0;  // reserved
 
-    // Pack read value into buffer starting at byte 4 based on type size
+    // Pack read value into 4 bytes (null-padded)
     if (opcode == 0x00) {  // Read
-        switch (ep_info->byte_size) {
-            case 1: {
-                int val;
-                sscanf(read_buf, "%d", &val);
-                txmsg.buf[4] = static_cast<uint8_t>(val);
-                break;
-            }
-            case 2: {
-                int val;
-                sscanf(read_buf, "%d", &val);
-                uint16_t uval = static_cast<uint16_t>(val);
-                txmsg.buf[4] = static_cast<uint8_t>(uval);
-                txmsg.buf[5] = static_cast<uint8_t>(uval >> 8);
-                break;
-            }
-            case 4: {
-                float val;
-                if (sscanf(read_buf, "%f", &val) == 1) {
-                    uint32_t uval;
-                    std::memcpy(&uval, &val, sizeof(uval));
-                    txmsg.buf[4] = static_cast<uint8_t>(uval);
-                    txmsg.buf[5] = static_cast<uint8_t>(uval >> 8);
-                    txmsg.buf[6] = static_cast<uint8_t>(uval >> 16);
-                    txmsg.buf[7] = static_cast<uint8_t>(uval >> 24);
-                } else {
-                    uint32_t val;
-                    unsigned int ival;
-                    sscanf(read_buf, "%u", &ival);
-                    val = static_cast<uint32_t>(ival);
-                    txmsg.buf[4] = static_cast<uint8_t>(val);
-                    txmsg.buf[5] = static_cast<uint8_t>(val >> 8);
-                    txmsg.buf[6] = static_cast<uint8_t>(val >> 16);
-                    txmsg.buf[7] = static_cast<uint8_t>(val >> 24);
-                }
-                break;
-            }
-        }
+        std::memcpy(&txmsg.buf[4], read_buf, 4);
     }
     canbus_->send_message(txmsg);
 }

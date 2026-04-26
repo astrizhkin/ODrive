@@ -660,6 +660,7 @@ if args.generate_endpoints:
             flat['endpoints'][ep['name']] = {'id': ep['id'], 'type': ep['type'], 'access': ep['access']}
         with open(args.json_output, 'w', encoding='utf-8') as f:
             json.dump(flat, f, indent=2)
+
 else:
     embedded_endpoint_definitions = None
     endpoints = None
@@ -742,22 +743,6 @@ env.filters['tokenize'] = tokenize
 env.filters['html_escape'] = html_escape
 env.filters['diagonalize'] = lambda lst: [lst[:i + 1] for i in range(len(lst))]
 env.filters['debug'] = lambda x: print(x)
-
-# Type code mapping for endpoint metadata table (used in endpoints_template.j2)
-TYPE_CODE_MAP = {
-    'bool': 0, 'uint8': 1, 'int8': 2,
-    'uint16': 3, 'int16': 4,
-    'uint32': 5, 'int32': 6, 'float': 7,
-    'uint64': 8, 'int64': 9,
-}
-BYTE_SIZE_MAP = {
-    'bool': 1, 'uint8': 1, 'int8': 1,
-    'uint16': 2, 'int16': 2,
-    'uint32': 4, 'int32': 4, 'float': 4,
-    'uint64': 8, 'int64': 8,
-}
-env.filters['type_code'] = lambda t: TYPE_CODE_MAP.get(t, 0)
-env.filters['byte_size'] = lambda t: BYTE_SIZE_MAP.get(t, 1)
 
 template = env.from_string(template_file.read())
 
