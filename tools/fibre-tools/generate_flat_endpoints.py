@@ -471,13 +471,13 @@ enum EndpointTypeCode : uint8_t {{
     TYPE_FLOAT = 7,
     TYPE_UINT64 = 8,
     TYPE_INT64 = 9,
-}}
+}};
 
 // Access constants
 enum EndpointAccess : uint8_t {{
     ACCESS_RW = 0,
     ACCESS_RO = 1,
-}}
+}};
 '''
 
     # Append the endpoint table

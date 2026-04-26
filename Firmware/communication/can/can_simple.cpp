@@ -5,6 +5,7 @@
 #include <functional>
 #include <autogen/type_info.hpp>
 #include <autogen/flat_endpoints.hpp>
+#include <autogen/endpoints.hpp>
 #include <fibre/introspection.hpp>
 
 bool CANSimple::init() {
@@ -272,14 +273,17 @@ void CANSimple::can_sdo_rx_callback(Axis& axis, const can_Message_t& msg) {
             case 4: {
                 float val;
                 if (sscanf(value_buf, "%f", &val) == 1) {
-                    uint32_t uval = *reinterpret_cast<uint32_t*>(&val);
+                    uint32_t uval;
+                    std::memcpy(&uval, &val, sizeof(uval));
                     txmsg.buf[4] = static_cast<uint8_t>(uval);
                     txmsg.buf[5] = static_cast<uint8_t>(uval >> 8);
                     txmsg.buf[6] = static_cast<uint8_t>(uval >> 16);
                     txmsg.buf[7] = static_cast<uint8_t>(uval >> 24);
                 } else {
                     uint32_t val;
-                    sscanf(value_buf, "%u", &val);
+                    unsigned int ival;
+                    sscanf(value_buf, "%u", &ival);
+                    val = static_cast<uint32_t>(ival);
                     txmsg.buf[4] = static_cast<uint8_t>(val);
                     txmsg.buf[5] = static_cast<uint8_t>(val >> 8);
                     txmsg.buf[6] = static_cast<uint8_t>(val >> 16);
@@ -328,11 +332,11 @@ void CANSimple::can_sdo_rx_callback(Axis& axis, const can_Message_t& msg) {
                 if (ep_info->type_code == 7) {  // float
                     float val;
                     std::memcpy(&val, &msg.buf[4], sizeof(val));
-                    snprintf(value_buf, sizeof(value_buf), "%f", val);
+                    snprintf(value_buf, sizeof(value_buf), "%f", (double)val);
                 } else {
                     uint32_t val;
                     std::memcpy(&val, &msg.buf[4], sizeof(val));
-                    snprintf(value_buf, sizeof(value_buf), "%u", val);
+                    snprintf(value_buf, sizeof(value_buf), "%u", (unsigned int)val);
                 }
                 break;
             }
@@ -650,9 +654,9 @@ uint32_t CANSimple::service_stack() {
             {axis.config_.can.heartbeat_rate_ms, axis.can_.last_heartbeat, &CANSimple::send_heartbeat},
             {axis.config_.can.encoder_rate_ms, axis.can_.last_encoder, &CANSimple::get_encoder_estimates_callback},
             {axis.config_.can.motor_error_rate_ms, axis.can_.last_motor_error, &CANSimple::get_motor_error_callback},
-            {axis.config_.can.encoder_error_rate_ms, axis.can_.last_encoder_error, &CANSimple::get_encoder_error_callback},
+//            {axis.config_.can.encoder_error_rate_ms, axis.can_.last_encoder_error, &CANSimple::get_encoder_error_callback},
             {axis.config_.can.controller_error_rate_ms, axis.can_.last_controller_error, &CANSimple::get_controller_error_callback},
-            {axis.config_.can.sensorless_error_rate_ms, axis.can_.last_sensorless_error, &CANSimple::get_sensorless_error_callback},
+//            {axis.config_.can.sensorless_error_rate_ms, axis.can_.last_sensorless_error, &CANSimple::get_sensorless_error_callback},
             {axis.config_.can.encoder_count_rate_ms, axis.can_.last_encoder_count, &CANSimple::get_encoder_count_callback},
             {axis.config_.can.iq_rate_ms, axis.can_.last_iq, &CANSimple::get_iq_callback},
             {axis.config_.can.sensorless_rate_ms, axis.can_.last_sensorless, &CANSimple::get_sensorless_estimates_callback},
