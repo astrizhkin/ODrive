@@ -118,5 +118,5 @@ bool CANSimple::sdo_set_property(uint16_t endpoint_id, const char* value, size_t
     const StringConvertibleTypeInfo* type_info =
         dynamic_cast<const StringConvertibleTypeInfo*>(property.get_type_info());
     if (!type_info) return false;
-    return type_info->set_string(property, value, len);
+    return type_info->set_string(property, const_cast<char*>(value), len);
 }
