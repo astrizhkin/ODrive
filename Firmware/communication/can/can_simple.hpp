@@ -59,9 +59,9 @@ class CANSimple {
     
     // Get functions (msg.rtr bit must be set)
     bool get_motor_error_callback(const Axis& axis);
-    bool get_encoder_error_callback(const Axis& axis);
+//    bool get_encoder_error_callback(const Axis& axis);
     bool get_controller_error_callback(const Axis& axis);
-    bool get_sensorless_error_callback(const Axis& axis);
+//    bool get_sensorless_error_callback(const Axis& axis);
     bool get_encoder_estimates_callback(const Axis& axis);
     bool get_encoder_count_callback(const Axis& axis);
     bool get_iq_callback(const Axis& axis);

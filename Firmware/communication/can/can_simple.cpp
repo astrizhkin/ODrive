@@ -392,29 +392,29 @@ bool CANSimple::get_motor_error_callback(const Axis& axis) {
     return canbus_->send_message(txmsg);
 }
 
-bool CANSimple::get_encoder_error_callback(const Axis& axis) {
-    can_Message_t txmsg;
-    txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
-    txmsg.id += MSG_GET_ENCODER_ERROR;  // heartbeat ID
-    txmsg.isExt = axis.config_.can.is_extended;
-    txmsg.len = 8;
+//bool CANSimple::get_encoder_error_callback(const Axis& axis) {
+//    can_Message_t txmsg;
+//    txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
+//    txmsg.id += MSG_GET_ENCODER_ERROR;  // heartbeat ID
+//    txmsg.isExt = axis.config_.can.is_extended;
+//    txmsg.len = 8;
+//
+//    can_setSignal(txmsg, axis.encoder_.error_, 0, 32, true);
+//
+//    return canbus_->send_message(txmsg);
+//}
 
-    can_setSignal(txmsg, axis.encoder_.error_, 0, 32, true);
-
-    return canbus_->send_message(txmsg);
-}
-
-bool CANSimple::get_sensorless_error_callback(const Axis& axis) {
-    can_Message_t txmsg;
-    txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
-    txmsg.id += MSG_GET_SENSORLESS_ERROR;  // heartbeat ID
-    txmsg.isExt = axis.config_.can.is_extended;
-    txmsg.len = 8;
-
-    can_setSignal(txmsg, axis.sensorless_estimator_.error_, 0, 32, true);
-
-    return canbus_->send_message(txmsg);
-}
+//bool CANSimple::get_sensorless_error_callback(const Axis& axis) {
+//    can_Message_t txmsg;
+//    txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
+//    txmsg.id += MSG_GET_SENSORLESS_ERROR;  // heartbeat ID
+//    txmsg.isExt = axis.config_.can.is_extended;
+//    txmsg.len = 8;
+//
+//    can_setSignal(txmsg, axis.sensorless_estimator_.error_, 0, 32, true);
+//
+//    return canbus_->send_message(txmsg);
+//}
 
 bool CANSimple::get_controller_error_callback(const Axis& axis) {
     can_Message_t txmsg;
