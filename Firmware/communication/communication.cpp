@@ -102,21 +102,21 @@ ODrive& ep_root = odrv;
 
 // SDO endpoint access implementations - delegate to Fibre introspection system
 bool CANSimple::sdo_get_property(uint16_t endpoint_id, char* out_buf, size_t out_size) {
-    fibre::Introspectable property{};
+    Introspectable property{};
     fibre::get_property(property, endpoint_id);
     if (!property.is_valid()) return false;
-    const fibre::StringConvertibleTypeInfo* type_info =
-        dynamic_cast<const fibre::StringConvertibleTypeInfo*>(property.get_type_info());
+    const StringConvertibleTypeInfo* type_info =
+        dynamic_cast<const StringConvertibleTypeInfo*>(property.get_type_info());
     if (!type_info) return false;
     return type_info->get_string(property, out_buf, out_size);
 }
 
 bool CANSimple::sdo_set_property(uint16_t endpoint_id, const char* value, size_t len) {
-    fibre::Introspectable property{};
+    Introspectable property{};
     fibre::get_property(property, endpoint_id);
     if (!property.is_valid()) return false;
-    const fibre::StringConvertibleTypeInfo* type_info =
-        dynamic_cast<const fibre::StringConvertibleTypeInfo*>(property.get_type_info());
+    const StringConvertibleTypeInfo* type_info =
+        dynamic_cast<const StringConvertibleTypeInfo*>(property.get_type_info());
     if (!type_info) return false;
     return type_info->set_string(property, value, len);
 }
