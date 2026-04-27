@@ -102,13 +102,9 @@ Cyclic messages are sent by ODrive on a timer without a request. As of firmware 
      - Get Motor Error
      - `motor_error_rate_ms`
      - 0
-   * - 0x04
-     - Get Encoder Error
-     - `encoder_error_rate_ms`
-     - 0
    * - 0x1D
      - Get Controller Error
-     - `controller_error_rate_ms`
+     - `controller_encoder_error_rate_ms`
      - 0
    * - 0x05
      - Get Sensorless Error
@@ -146,8 +142,7 @@ Cyclic messages are sent by ODrive on a timer without a request. As of firmware 
  .. 0x01 | `heartbeat_rate_ms` | Heartbeat
  .. 0x09 | `encoder_rate_ms` | Get Encoder Estimates
  .. 0x03 | `motor_error_rate_ms` | Get Motor Error
- .. 0x04 | `encoder_error_rate_ms` | Get Encoder Error
- .. 0x1D | `controller_error_rate_ms` | Get Controller Error
+ .. 0x1D | `controller_encoder_error_rate_ms` | Get Controller Encoder Error
  .. 0x05 | `sensorless_error_rate_ms` | Get Sensorless Error
  .. 0x0A | `encoder_count_rate_ms` | Get Encoder Count
  .. 0x14 | `iq_rate_ms` | Get Iq

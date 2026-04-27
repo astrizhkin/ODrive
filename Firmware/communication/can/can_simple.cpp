@@ -483,7 +483,7 @@ uint32_t CANSimple::service_stack() {
             {axis.config_.can.heartbeat_rate_ms, axis.can_.last_heartbeat, &CANSimple::send_heartbeat},
             {axis.config_.can.encoder_rate_ms, axis.can_.last_encoder, &CANSimple::get_encoder_estimates_callback},
             {axis.config_.can.motor_error_rate_ms, axis.can_.last_motor_error, &CANSimple::get_motor_error_callback},
-            {axis.config_.can.controller_error_rate_ms, axis.can_.last_controller_error, &CANSimple::get_controller_encoder_error_callback},
+            {axis.config_.can.controller_encoder_error_rate_ms, axis.can_.last_controller_encoder_error, &CANSimple::get_controller_encoder_error_callback},
 //            {axis.config_.can.sensorless_error_rate_ms, axis.can_.last_sensorless_error, &CANSimple::get_sensorless_error_callback},
             {axis.config_.can.encoder_count_rate_ms, axis.can_.last_encoder_count, &CANSimple::get_encoder_count_callback},
             {axis.config_.can.iq_rate_ms, axis.can_.last_iq, &CANSimple::get_iq_callback},

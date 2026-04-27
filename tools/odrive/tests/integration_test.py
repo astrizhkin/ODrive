@@ -19,8 +19,7 @@ command_set = {
     'heartbeat': (0x001, [('error', 'I', 1), ('current_state', 'I', 1)]), # tested
     'estop': (0x002, []), # tested
     'get_motor_error': (0x003, [('motor_error', 'I', 1)]), # untested
-    'get_encoder_error': (0x004, [('encoder_error', 'I', 1)]), # untested
-    'get_sensorless_error': (0x005, [('sensorless_error', 'I', 1)]), # untested
+    #now it is SDO 'get_sensorless_error': (0x005, [('sensorless_error', 'I', 1)]), # untested
     'set_node_id': (0x006, [('node_id', 'I', 1)]), # tested
     'set_requested_state': (0x007, [('requested_state', 'I', 1)]), # tested
     # 0x008 not yet implemented
@@ -40,6 +39,7 @@ command_set = {
     'reboot': (0x016, []), # tested
     'get_vbus_voltage': (0x017, [('vbus_voltage', 'f', 1)]), # tested
     'clear_errors': (0x018, []), # partially tested
+    'get_controller_encoder_error': (0x01D, [('controller_error', 'I', 1),('encoder_error', 'I', 1)]), # untested
 }
 
 def command(bus, node_id_, extended_id, cmd_name, **kwargs):

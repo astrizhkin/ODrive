@@ -1,9 +1,22 @@
 
 ## [0.5.7] - 2026-04-15
 
-Command ID | Rate Variable | Message Name
-:-- | :-- | :--
- 0x1E | `temperature_rate_ms` | Get Temperature
+### Added
+
+* Added CAN Temperature message (0x1E). Send an RTR frame to receive FET and motor temperature readings.
+* Added Enter DFU Mode command (0x1F) to enter firmware update mode over CAN.
+* Added CAN SDO protocol (0x04/0x05) for generic parameter read/write via SDO, enabling configuration of any parameter exposed in flat_endpoints.json.
+* Added reboot action parameter to Reset ODrive command (0x16) — supports save-to-NVM and erase-config actions.
+
+### Changed
+
+* Renamed `controller_error_rate_ms` to `controller_encoder_error_rate_ms` to match the actual message content (controller + encoder errors).
+* Replaced Get Sensorless Error (0x05) with CAN SDO (0x04/0x05). Sensorless error is no longer available as a cyclic CAN message.
+
+### Fixed
+
+* Fixed compilation with GCC 12.
+* Removed unused FreeRTOS functions to reduce binary size.
 
 
 ## [0.5.6] - 2023-04-29

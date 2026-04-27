@@ -601,8 +601,7 @@ interfaces:
       heartbeat_rate_ms: uint32
       encoder_rate_ms: uint32
       motor_error_rate_ms: uint32
-      encoder_error_rate_ms: uint32
-      controller_error_rate_ms: uint32
+      controller_encoder_error_rate_ms: uint32
       sensorless_error_rate_ms: uint32
       encoder_count_rate_ms: uint32
       iq_rate_ms: uint32
