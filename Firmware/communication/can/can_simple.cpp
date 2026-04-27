@@ -79,10 +79,6 @@ void CANSimple::do_command(Axis& axis, const can_Message_t& msg) {
         case MSG_CAN_SDO_TX:
             // TxSdo is only used for responses, never dispatched as command
             break;
-//        case MSG_GET_ENCODER_ERROR:
-//            if (msg.rtr || msg.len == 0)
-//                get_encoder_error_callback(axis);
-//            break;
 //        case MSG_GET_SENSORLESS_ERROR:
 //            if (msg.rtr || msg.len == 0)
 //                get_sensorless_error_callback(axis);
@@ -161,8 +157,8 @@ void CANSimple::do_command(Axis& axis, const can_Message_t& msg) {
         case MSG_GET_ADC_VOLTAGE:
             get_adc_voltage_callback(axis, msg);
             break;
-        case MSG_GET_CONTROLLER_ERROR:
-            get_controller_error_callback(axis);
+        case MSG_GET_CONTROLLER_ENCODER_ERROR:
+            get_controller_encoder_error_callback(axis);
             break;
         case MSG_GET_TEMPERATURE:
             get_temperature_callback(axis);
@@ -237,18 +233,6 @@ bool CANSimple::get_motor_error_callback(const Axis& axis) {
     return canbus_->send_message(txmsg);
 }
 
-//bool CANSimple::get_encoder_error_callback(const Axis& axis) {
-//    can_Message_t txmsg;
-//    txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
-//    txmsg.id += MSG_GET_ENCODER_ERROR;  // heartbeat ID
-//    txmsg.isExt = axis.config_.can.is_extended;
-//    txmsg.len = 8;
-//
-//    can_setSignal(txmsg, axis.encoder_.error_, 0, 32, true);
-//
-//    return canbus_->send_message(txmsg);
-//}
-
 //bool CANSimple::get_sensorless_error_callback(const Axis& axis) {
 //    can_Message_t txmsg;
 //    txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
@@ -261,14 +245,15 @@ bool CANSimple::get_motor_error_callback(const Axis& axis) {
 //    return canbus_->send_message(txmsg);
 //}
 
-bool CANSimple::get_controller_error_callback(const Axis& axis) {
+bool CANSimple::get_controller_encoder_error_callback(const Axis& axis) {
     can_Message_t txmsg;
     txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
-    txmsg.id += MSG_GET_CONTROLLER_ERROR;  // heartbeat ID
+    txmsg.id += MSG_GET_CONTROLLER_ENCODER_ERROR;  // heartbeat ID
     txmsg.isExt = axis.config_.can.is_extended;
     txmsg.len = 8;
 
     can_setSignal(txmsg, axis.controller_.error_, 0, 32, true);
+    can_setSignal(txmsg, axis.encoder_.error_, 32, 32, true);
 
     return canbus_->send_message(txmsg);
 }
@@ -495,8 +480,7 @@ uint32_t CANSimple::service_stack() {
             {axis.config_.can.heartbeat_rate_ms, axis.can_.last_heartbeat, &CANSimple::send_heartbeat},
             {axis.config_.can.encoder_rate_ms, axis.can_.last_encoder, &CANSimple::get_encoder_estimates_callback},
             {axis.config_.can.motor_error_rate_ms, axis.can_.last_motor_error, &CANSimple::get_motor_error_callback},
-//            {axis.config_.can.encoder_error_rate_ms, axis.can_.last_encoder_error, &CANSimple::get_encoder_error_callback},
-            {axis.config_.can.controller_error_rate_ms, axis.can_.last_controller_error, &CANSimple::get_controller_error_callback},
+            {axis.config_.can.controller_error_rate_ms, axis.can_.last_controller_error, &CANSimple::get_controller_encoder_error_callback},
 //            {axis.config_.can.sensorless_error_rate_ms, axis.can_.last_sensorless_error, &CANSimple::get_sensorless_error_callback},
             {axis.config_.can.encoder_count_rate_ms, axis.can_.last_encoder_count, &CANSimple::get_encoder_count_callback},
             {axis.config_.can.iq_rate_ms, axis.can_.last_iq, &CANSimple::get_iq_callback},

@@ -13,7 +13,6 @@ class CANSimple {
         MSG_GET_MOTOR_ERROR,  // Errors
         MSG_CAN_SDO_RX,
         MSG_CAN_SDO_TX,
-        //MSG_GET_ENCODER_ERROR,
         //MSG_GET_SENSORLESS_ERROR,
         MSG_SET_AXIS_NODE_ID,
         MSG_SET_AXIS_REQUESTED_STATE,
@@ -38,7 +37,7 @@ class CANSimple {
         MSG_SET_POS_GAIN,
         MSG_SET_VEL_GAINS,
         MSG_GET_ADC_VOLTAGE,
-        MSG_GET_CONTROLLER_ERROR,
+        MSG_GET_CONTROLLER_ENCODER_ERROR,
         MSG_GET_TEMPERATURE,
         MSG_CO_HEARTBEAT_CMD = 0x700,  // CANOpen NMT Heartbeat  SEND
     };
@@ -59,8 +58,7 @@ class CANSimple {
     
     // Get functions (msg.rtr bit must be set)
     bool get_motor_error_callback(const Axis& axis);
-//    bool get_encoder_error_callback(const Axis& axis);
-    bool get_controller_error_callback(const Axis& axis);
+    bool get_controller_encoder_error_callback(const Axis& axis);
 //    bool get_sensorless_error_callback(const Axis& axis);
     bool get_encoder_estimates_callback(const Axis& axis);
     bool get_encoder_count_callback(const Axis& axis);
