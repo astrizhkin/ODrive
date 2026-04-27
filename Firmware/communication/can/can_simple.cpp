@@ -47,11 +47,94 @@ void CANSimple::handle_can_message(const can_Message_t& msg) {
     // 6 bits | 5 bits
     uint32_t nodeID = get_node_id(msg.id);
 
+    // Check for broadcast address (0x3F) — used for discovery and address assignment
+    bool is_broadcast = (nodeID == ((uint32_t)1 << NUM_NODE_ID_BITS) - 1);
+
+    if (is_broadcast) {
+        do_broadcast_command(msg);
+        return;
+    }
+
     for (auto& axis : axes) {
-        if ((axis.config_.can.node_id == nodeID) && (axis.config_.can.is_extended == msg.isExt)) {
+        if (axis.config_.can.node_id == nodeID &&
+            axis.config_.can.is_extended == msg.isExt) {
             do_command(axis, msg);
             return;
         }
+    }
+}
+
+void CANSimple::handle_rtr_discovery(const can_Message_t& msg) {
+    // Discovery request: RTR frame to broadcast address, cmd 0x06
+    // Respond with node_id + serial_number via TxSdo
+    // Use the first axis to determine extended mode
+
+    //first message for axis0
+    can_Message_t txmsg0;
+    txmsg0.id = (get_node_id(msg.id) << NUM_CMD_ID_BITS) | MSG_CAN_SDO_TX;
+    txmsg0.isExt = axes[0].config_.can.is_extended;
+    txmsg0.len = 7;
+    txmsg0.buf[0] = static_cast<uint8_t>(axes[0].config_.can.node_id);
+
+    uint64_t sn0 = odrv.serial_number_;
+    for (int i = 0; i < 6; i++) {
+        txmsg0.buf[1 + i] = static_cast<uint8_t>(sn0 >> (i * 8));
+    }
+    canbus_->send_message(txmsg0);
+
+    //second message for axis1
+    can_Message_t txmsg1;
+    txmsg1.id = (get_node_id(msg.id) << NUM_CMD_ID_BITS) | MSG_CAN_SDO_TX;
+    txmsg1.isExt = axes[1].config_.can.is_extended;
+    txmsg1.len = 7;
+    txmsg1.buf[0] = static_cast<uint8_t>(axes[1].config_.can.node_id);
+
+    uint64_t sn1 = odrv.serial_number_ +1;
+    for (int i = 0; i < 6; i++) {
+        txmsg1.buf[1 + i] = static_cast<uint8_t>(sn1 >> (i * 8));
+    }
+    canbus_->send_message(txmsg1);
+}
+
+void CANSimple::do_broadcast_command(const can_Message_t& msg) {
+    const uint32_t cmd = get_cmd_id(msg.id);
+
+    // Handle RTR frames separately (discovery)
+    if (msg.rtr) {
+        handle_rtr_discovery(msg);
+        return;
+    }
+
+    switch (cmd) {
+        case MSG_SET_AXIS_NODE_ID:
+            // Address assignment: [node_id(1B) + serial_number(6B LE)]
+            if (msg.len == 7) {
+                uint64_t sn0 = odrv.serial_number_;
+                uint64_t sn1 = odrv.serial_number_+1;
+
+                bool match0 = true;
+                bool match1 = true;
+                for (int i = 0; i < 6; i++) {
+                    if (msg.data[1 + i] != static_cast<uint8_t>(sn0 >> (i * 8))) {
+                        match0 = false;
+                        break;
+                    }
+                    if (msg.data[1 + i] != static_cast<uint8_t>(sn1 >> (i * 8))) {
+                        match1 = false;
+                        break;
+                    }
+                }
+                uint8_t new_node_id = msg.data[0];
+                if (match0) {
+                    axes[0].config_.can.node_id = new_node_id;
+                }
+                if (match1) {
+                    axes[1].config_.can.node_id = new_node_id;
+                }
+            }
+            break;
+        default:
+            break;
     }
 }
 
@@ -60,6 +143,8 @@ void CANSimple::do_command(Axis& axis, const can_Message_t& msg) {
     axis.watchdog_feed();
     switch (cmd) {
         case MSG_CO_NMT_CTRL:
+            // GET_VERSION command: send firmware/hardware version info
+            get_version_callback(axis);
             break;
         case MSG_CO_HEARTBEAT_CMD:
             break;
@@ -218,6 +303,29 @@ void CANSimple::can_sdo_rx_callback(Axis& axis, const can_Message_t& msg) {
 
 void CANSimple::nmt_callback(const Axis& axis, const can_Message_t& msg) {
     // Not implemented
+}
+
+bool CANSimple::get_version_callback(const Axis& axis) {
+    can_Message_t txmsg;
+    txmsg.id = (axis.config_.can.node_id << NUM_CMD_ID_BITS) | MSG_CAN_SDO_TX;
+    txmsg.isExt = axis.config_.can.is_extended;
+    txmsg.len = 8;
+
+    // Format expected by Python can_config.py _version_check:
+    //_, hw_product_line, hw_version, hw_variant, fw_major, fw_minor, fw_revision, fw_unreleased = \
+    //    struct.unpack('<BBBBBBBB', msg.data)
+    //hw_version_str = f"{hw_product_line}.{hw_version}.{hw_variant}"
+    //fw_version_str = f"{fw_major}.{fw_minor}.{fw_revision}"
+    txmsg.buf[0] = odrv.hw_version_major_;                     // hw_product_line
+    txmsg.buf[1] = odrv.hw_version_minor_;                     // hw_version
+    txmsg.buf[2] = odrv.hw_version_variant_;                   // hw_variant
+    txmsg.buf[3] = odrv.fw_version_major_;                     // fw_major
+    txmsg.buf[4] = odrv.fw_version_minor_;                     // fw_inor
+    txmsg.buf[5] = odrv.fw_version_revision_;                  // fw_revision
+    txmsg.buf[6] = odrv.fw_version_unreleased_;                // fw_unreleased
+    txmsg.buf[7] = 0;                                          // padding
+
+    return canbus_->send_message(txmsg);
 }
 
 void CANSimple::estop_callback(Axis& axis, const can_Message_t& msg) {
@@ -457,7 +565,10 @@ void  CANSimple::reboot_callback(Axis& axis, const can_Message_t& msg) {
 }
 
 void CANSimple::clear_errors_callback(Axis& axis, const can_Message_t& msg) {
-    odrv.clear_errors();  // TODO: might want to clear axis errors only
+    // Identify command: msg.data[0] == 1 means "start LED blink"
+    // msg.data[0] == 0 means "stop LED blink"
+    // TODO: implement LED blinking when msg.data[0] == 1
+    odrv.clear_errors();
 }
 
 uint32_t CANSimple::service_stack() {

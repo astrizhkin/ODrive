@@ -54,10 +54,13 @@ class CANSimple {
     bool send_heartbeat(const Axis& axis);
 
     void handle_can_message(const can_Message_t& msg);
+    void do_broadcast_command(const can_Message_t& msg);
+    void handle_rtr_discovery(const can_Message_t& msg);
 
     void do_command(Axis& axis, const can_Message_t& cmd);
     
     // Get functions (msg.rtr bit must be set)
+    bool get_version_callback(const Axis& axis);
     bool get_motor_error_callback(const Axis& axis);
     bool get_controller_encoder_error_callback(const Axis& axis);
 //    bool get_sensorless_error_callback(const Axis& axis);
