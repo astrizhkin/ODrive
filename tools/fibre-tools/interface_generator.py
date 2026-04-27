@@ -684,10 +684,17 @@ if args.generate_endpoints:
         fw_version = args.fw_version or read_version_c(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'Firmware', 'autogen', 'version.c')) or '0.0.0'
         hw_version = args.hw_version or userdata.get('hw_version') or '0.0.0'
         flat = {'endpoints': {}, 'fw_version': fw_version, 'hw_version': hw_version}
-        for ep in embedded_endpoint_definitions:
-            if ep.get('type') in ('json', 'object', 'function'):
-                continue  # skip non-leaf entries
-            flat['endpoints'][ep['name']] = {'id': ep['id'], 'type': ep['type'], 'access': ep['access']}
+        # Flatten hierarchical embedded_endpoint_definitions tree into full paths
+        def flatten_tree(tree, prefix=''):
+            for ep in tree:
+                if ep.get('type') in ('json', 'object', 'function'):
+                    if 'members' in ep:
+                        child_prefix = join_name(prefix, ep['name']) if prefix else ep['name']
+                        flatten_tree(ep['members'], child_prefix)
+                elif 'name' in ep:
+                    full_name = join_name(prefix, ep['name']) if prefix else ep['name']
+                    flat['endpoints'][full_name] = {'id': ep['id'], 'type': ep['type'], 'access': ep['access']}
+        flatten_tree(embedded_endpoint_definitions)
         with open(args.json_output, 'w', encoding='utf-8') as f:
             json.dump(flat, f, indent=2)
 
