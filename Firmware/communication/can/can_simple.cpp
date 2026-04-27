@@ -329,14 +329,14 @@ bool CANSimple::get_version_callback(const Axis& axis) {
     //_, hw_product_line, hw_version, hw_variant, fw_major, fw_minor, fw_revision, fw_unreleased = struct.unpack('<BBBBBBBB', msg.data)
     //hw_version_str = f"{hw_product_line}.{hw_version}.{hw_variant}"
     //fw_version_str = f"{fw_major}.{fw_minor}.{fw_revision}"
-    txmsg.buf[0] = odrv.hw_version_major_;                     // hw_product_line
-    txmsg.buf[1] = odrv.hw_version_minor_;                     // hw_version
-    txmsg.buf[2] = odrv.hw_version_variant_;                   // hw_variant
-    txmsg.buf[3] = odrv.fw_version_major_;                     // fw_major
-    txmsg.buf[4] = odrv.fw_version_minor_;                     // fw_minor
-    txmsg.buf[5] = odrv.fw_version_revision_;                  // fw_revision
-    txmsg.buf[6] = odrv.fw_version_unreleased_;                // fw_unreleased
-    txmsg.buf[7] = 0;                                          // padding
+    txmsg.buf[0] = 0;                                          // hw_product_line (always 0)
+    txmsg.buf[1] = odrv.hw_version_major_;                   // hw major
+    txmsg.buf[2] = odrv.hw_version_minor_;                   // hw minor
+    txmsg.buf[3] = odrv.hw_version_variant_;                 // hw variant
+    txmsg.buf[4] = odrv.fw_version_major_;                   // fw major
+    txmsg.buf[5] = odrv.fw_version_minor_;                   // fw minor
+    txmsg.buf[6] = odrv.fw_version_revision_;                // fw revision
+    txmsg.buf[7] = odrv.fw_version_unreleased_;              // fw unreleased
 
     return canbus_->send_message(txmsg);
 }
