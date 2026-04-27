@@ -163,6 +163,9 @@ void CANSimple::do_command(Axis& axis, const can_Message_t& msg) {
         case MSG_GET_TEMPERATURE:
             get_temperature_callback(axis);
             break;
+        case MSG_ENTER_DFU_MODE:
+            odrv.enter_dfu_mode();
+            break;
         default:
             break;
     }

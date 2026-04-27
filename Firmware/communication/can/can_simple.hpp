@@ -39,6 +39,7 @@ class CANSimple {
         MSG_GET_ADC_VOLTAGE,
         MSG_GET_CONTROLLER_ENCODER_ERROR,
         MSG_GET_TEMPERATURE,
+        MSG_ENTER_DFU_MODE,
         MSG_CO_HEARTBEAT_CMD = 0x700,  // CANOpen NMT Heartbeat  SEND
     };
 
