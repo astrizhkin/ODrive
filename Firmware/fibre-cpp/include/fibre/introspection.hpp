@@ -148,6 +148,15 @@ struct FloatSettableTypeInfo {
     virtual bool set_float(const Introspectable& obj, float val) const { return false; }
 };
 
+// Binary read/write: read/write raw bytes directly (for CAN SDO with binary values)
+struct BinaryReadableTypeInfo {
+    virtual bool get_binary(const Introspectable& obj, char* buffer, size_t length) const { return false; }
+};
+
+struct BinarySettableTypeInfo {
+    virtual bool set_binary(const Introspectable& obj, const char* buffer, size_t length) const { return false; }
+};
+
 /* Built-in type infos ********************************************************/
 
 template<typename T>
@@ -155,7 +164,7 @@ struct FibrePropertyTypeInfo;
 
 // readonly property
 template<typename T>
-struct FibrePropertyTypeInfo<Property<const T>> : StringConvertibleTypeInfo, TypeInfo {
+struct FibrePropertyTypeInfo<Property<const T>> : StringConvertibleTypeInfo, BinaryReadableTypeInfo, TypeInfo {
     using TypeInfo::TypeInfo;
     static const PropertyInfo property_table[];
     static const FibrePropertyTypeInfo<Property<const T>> singleton;
@@ -167,6 +176,13 @@ struct FibrePropertyTypeInfo<Property<const T>> : StringConvertibleTypeInfo, Typ
     bool get_string(const Introspectable& obj, char* buffer, size_t length) const override {
         return to_string(static_cast<maybe_underlying_type_t<T>>(as<const Property<const T>>(obj).read()), buffer, length, 0);
     }
+
+    bool get_binary(const Introspectable& obj, char* buffer, size_t length) const override {
+        if (length < sizeof(T)) return false;
+        T value = as<const Property<const T>>(obj).read();
+        std::memcpy(buffer, &value, sizeof(T));
+        return true;
+    }
 };
 
 template<typename T>
@@ -176,7 +192,7 @@ const FibrePropertyTypeInfo<Property<const T>> FibrePropertyTypeInfo<Property<co
 
 // readwrite property
 template<typename T>
-struct FibrePropertyTypeInfo<Property<T>> : FloatSettableTypeInfo, StringConvertibleTypeInfo, TypeInfo {
+struct FibrePropertyTypeInfo<Property<T>> : FloatSettableTypeInfo, StringConvertibleTypeInfo, BinarySettableTypeInfo, BinaryReadableTypeInfo, TypeInfo {
     using TypeInfo::TypeInfo;
     static const PropertyInfo property_table[];
     static const FibrePropertyTypeInfo<Property<T>> singleton;
@@ -205,6 +221,21 @@ struct FibrePropertyTypeInfo<Property<T>> : FloatSettableTypeInfo, StringConvert
             return false;
         }
         as<const Property<T>>(obj).exchange(static_cast<T>(value));
+        return true;
+    }
+
+    bool get_binary(const Introspectable& obj, char* buffer, size_t length) const override {
+        if (length < sizeof(T)) return false;
+        T value = as<const Property<T>>(obj).read();
+        std::memcpy(buffer, &value, sizeof(T));
+        return true;
+    }
+
+    bool set_binary(const Introspectable& obj, const char* buffer, size_t length) const override {
+        if (length < sizeof(T)) return false;
+        T value{};
+        std::memcpy(&value, buffer, sizeof(T));
+        as<const Property<T>>(obj).exchange(value);
         return true;
     }
 };

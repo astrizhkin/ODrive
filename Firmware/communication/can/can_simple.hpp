@@ -91,9 +91,9 @@ class CANSimple {
     void can_sdo_rx_callback(Axis& axis, const can_Message_t& msg);
 
     // SDO endpoint access - implemented in communication.cpp
-    // Reads property value as string into out_buf. Returns true on success.
+    // Reads property value as binary into out_buf (4 bytes). Returns true on success.
     static bool sdo_get_property(uint16_t endpoint_id, char* out_buf, size_t out_size);
-    // Writes property value from value_buf. Returns true on success.
+    // Writes property value as binary (4 bytes). Returns true on success.
     static bool sdo_set_property(uint16_t endpoint_id, const char* value, size_t len);
 
     // Other functions

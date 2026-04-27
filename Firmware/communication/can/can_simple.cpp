@@ -174,25 +174,22 @@ void CANSimple::do_command(Axis& axis, const can_Message_t& msg) {
 
 void CANSimple::can_sdo_rx_callback(Axis& axis, const can_Message_t& msg) {
     // SDO frame layout (fixed 4-byte value field):
-    // Request:  [opcode:1B][endpoint_id:2B][reserved:1B][value:4B]
-    // Response: [return_code:1B][endpoint_id:2B][reserved:1B][value:4B]
+    // Request:  [opcode:1B][endpoint_id:2B LE][reserved:1B][value:4B]
+    // Response: [return_code:1B][endpoint_id:2B LE][reserved:1B][value:4B]
     uint8_t opcode = msg.buf[0];
     uint16_t endpoint_id;
     std::memcpy(&endpoint_id, &msg.buf[1], sizeof(endpoint_id));
 
-    // Build string from CAN value bytes for write
-    char write_buf[5] = {0};
-    if (opcode == 0x01) {
-        std::memcpy(write_buf, &msg.buf[4], 4);
-    }
-
-    // Execute endpoint operation
-    char read_buf[5] = {0};
+    // Execute endpoint operation with binary value
+    char value_buf[4] = {0};
     bool success = false;
     if (opcode == 0x00) {
-        success = sdo_get_property(endpoint_id, read_buf, sizeof(read_buf));
+        // Read: get binary value from property
+        success = sdo_get_property(endpoint_id, value_buf, sizeof(value_buf));
     } else {
-        success = sdo_set_property(endpoint_id, write_buf, strlen(write_buf));
+        // Write: copy raw bytes from CAN frame into property
+        std::memcpy(value_buf, &msg.buf[4], 4);
+        success = sdo_set_property(endpoint_id, value_buf, 4);
     }
 
     // Build response
@@ -202,7 +199,7 @@ void CANSimple::can_sdo_rx_callback(Axis& axis, const can_Message_t& msg) {
     txmsg.len = 8;
 
     if (!success) {
-        txmsg.buf[0] = 0x06;  // error
+        txmsg.buf[0] = 0x06;  // error: unsupported address / type
         txmsg.buf[1] = static_cast<uint8_t>(endpoint_id);
         txmsg.buf[2] = static_cast<uint8_t>(endpoint_id >> 8);
         txmsg.buf[3] = 0;
@@ -215,10 +212,8 @@ void CANSimple::can_sdo_rx_callback(Axis& axis, const can_Message_t& msg) {
     txmsg.buf[2] = static_cast<uint8_t>(endpoint_id >> 8);
     txmsg.buf[3] = 0;  // reserved
 
-    // Pack read value into 4 bytes (null-padded)
-    if (opcode == 0x00) {  // Read
-        std::memcpy(&txmsg.buf[4], read_buf, 4);
-    }
+    // Pack binary value into response (always, for both read and write echo)
+    std::memcpy(&txmsg.buf[4], value_buf, 4);
     canbus_->send_message(txmsg);
 }
 

@@ -100,23 +100,23 @@ ODrive& ep_root = odrv;
 
 #include "../communication/can/can_simple.hpp"
 
-// SDO endpoint access implementations - delegate to Fibre introspection system
+// SDO endpoint access implementations - delegate to Fibre introspection system (binary)
 bool CANSimple::sdo_get_property(uint16_t endpoint_id, char* out_buf, size_t out_size) {
     Introspectable property{};
     fibre::get_property(property, endpoint_id);
     if (!property.is_valid()) return false;
-    const StringConvertibleTypeInfo* type_info =
-        dynamic_cast<const StringConvertibleTypeInfo*>(property.get_type_info());
+    const BinaryReadableTypeInfo* type_info =
+        dynamic_cast<const BinaryReadableTypeInfo*>(property.get_type_info());
     if (!type_info) return false;
-    return type_info->get_string(property, out_buf, out_size);
+    return type_info->get_binary(property, out_buf, out_size);
 }
 
 bool CANSimple::sdo_set_property(uint16_t endpoint_id, const char* value, size_t len) {
     Introspectable property{};
     fibre::get_property(property, endpoint_id);
     if (!property.is_valid()) return false;
-    const StringConvertibleTypeInfo* type_info =
-        dynamic_cast<const StringConvertibleTypeInfo*>(property.get_type_info());
+    const BinarySettableTypeInfo* type_info =
+        dynamic_cast<const BinarySettableTypeInfo*>(property.get_type_info());
     if (!type_info) return false;
-    return type_info->set_string(property, const_cast<char*>(value), len);
+    return type_info->set_binary(property, value, len);
 }
