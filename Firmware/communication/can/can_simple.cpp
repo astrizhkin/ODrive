@@ -11,6 +11,22 @@ bool CANSimple::init() {
         }
     }
 
+    // Subscribe to broadcast messages (node ID 0x3F) — one-time, shared across all axes
+    // Use the first axis to determine extended mode
+    if (axes[0].config_.can.is_extended) {
+        broadcast_subscription_handle_ = nullptr;  // extended mode not supported
+    } else {
+        MsgIdFilterSpecs broadcast_filter;
+        broadcast_filter.id = (uint16_t)(0x3F << NUM_CMD_ID_BITS);
+        broadcast_filter.mask = (uint32_t)(0xffffffff << NUM_CMD_ID_BITS);
+        broadcast_subscription_handle_ = nullptr;
+        canbus_->subscribe(
+            broadcast_filter, [](void* ctx, const can_Message_t& msg) {
+                ((CANSimple*)ctx)->handle_can_broadcast_message(msg);
+            },
+            this, &broadcast_subscription_handle_);
+    }
+
     return true;
 }
 
@@ -21,6 +37,7 @@ bool CANSimple::renew_subscription(size_t i) {
     node_ids_[i] = axis.config_.can.node_id;
     extended_node_ids_[i] = axis.config_.can.is_extended;
 
+    // Filter: covers all 32 commands for a given node ID (bottom 5 bits masked)
     MsgIdFilterSpecs filter = {
         .id = {},
         .mask = (uint32_t)(0xffffffff << NUM_CMD_ID_BITS)};
@@ -41,19 +58,15 @@ bool CANSimple::renew_subscription(size_t i) {
         this, &subscription_handles_[i]);
 }
 
+void CANSimple::handle_can_broadcast_message(const can_Message_t& msg) {
+    do_broadcast_command(msg);
+}
+
 void CANSimple::handle_can_message(const can_Message_t& msg) {
     //     Frame
     // nodeID | CMD
     // 6 bits | 5 bits
     uint32_t nodeID = get_node_id(msg.id);
-
-    // Check for broadcast address (0x3F) — used for discovery and address assignment
-    bool is_broadcast = (nodeID == ((uint32_t)1 << NUM_NODE_ID_BITS) - 1);
-
-    if (is_broadcast) {
-        do_broadcast_command(msg);
-        return;
-    }
 
     for (auto& axis : axes) {
         if (axis.config_.can.node_id == nodeID &&
@@ -307,7 +320,7 @@ void CANSimple::nmt_callback(const Axis& axis, const can_Message_t& msg) {
 
 bool CANSimple::get_version_callback(const Axis& axis) {
     can_Message_t txmsg;
-    txmsg.id = (axis.config_.can.node_id << NUM_CMD_ID_BITS) | MSG_CAN_SDO_TX;
+    txmsg.id = (axis.config_.can.node_id << NUM_CMD_ID_BITS) | MSG_CO_NMT_CTRL;
     txmsg.isExt = axis.config_.can.is_extended;
     txmsg.len = 8;
 
@@ -319,7 +332,7 @@ bool CANSimple::get_version_callback(const Axis& axis) {
     txmsg.buf[1] = odrv.hw_version_minor_;                     // hw_version
     txmsg.buf[2] = odrv.hw_version_variant_;                   // hw_variant
     txmsg.buf[3] = odrv.fw_version_major_;                     // fw_major
-    txmsg.buf[4] = odrv.fw_version_minor_;                     // fw_inor
+    txmsg.buf[4] = odrv.fw_version_minor_;                     // fw_minor
     txmsg.buf[5] = odrv.fw_version_revision_;                  // fw_revision
     txmsg.buf[6] = odrv.fw_version_unreleased_;                // fw_unreleased
     txmsg.buf[7] = 0;                                          // padding
