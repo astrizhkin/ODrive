@@ -79,12 +79,13 @@ void CANSimple::handle_can_message(const can_Message_t& msg) {
 
 void CANSimple::handle_rtr_discovery(const can_Message_t& msg) {
     // Discovery request: RTR frame to broadcast address, cmd 0x06
-    // Respond with node_id + serial_number via TxSdo
-    // Use the first axis to determine extended mode
+    // Respond on cmd 0x06 (ADDRESS_CMD) — not TxSdo, so the discoverer
+    // (which listens for cmd_id == ADDRESS_CMD) will see the response.
+    // Broadcast address is 0x3F, so the response ID is 0x3F << 5 | 0x06 = 0x7E6
 
     //first message for axis0
     can_Message_t txmsg0;
-    txmsg0.id = (get_node_id(msg.id) << NUM_CMD_ID_BITS) | MSG_CAN_SDO_TX;
+    txmsg0.id = (0x3F << NUM_CMD_ID_BITS) | MSG_SET_AXIS_NODE_ID;
     txmsg0.isExt = axes[0].config_.can.is_extended;
     txmsg0.len = 7;
     txmsg0.buf[0] = static_cast<uint8_t>(axes[0].config_.can.node_id);
@@ -97,7 +98,7 @@ void CANSimple::handle_rtr_discovery(const can_Message_t& msg) {
 
     //second message for axis1
     can_Message_t txmsg1;
-    txmsg1.id = (get_node_id(msg.id) << NUM_CMD_ID_BITS) | MSG_CAN_SDO_TX;
+    txmsg1.id = (0x3F << NUM_CMD_ID_BITS) | MSG_SET_AXIS_NODE_ID;
     txmsg1.isExt = axes[1].config_.can.is_extended;
     txmsg1.len = 7;
     txmsg1.buf[0] = static_cast<uint8_t>(axes[1].config_.can.node_id);
