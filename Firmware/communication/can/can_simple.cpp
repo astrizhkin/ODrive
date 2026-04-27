@@ -115,16 +115,16 @@ void CANSimple::do_broadcast_command(const can_Message_t& msg) {
                 bool match0 = true;
                 bool match1 = true;
                 for (int i = 0; i < 6; i++) {
-                    if (msg.data[1 + i] != static_cast<uint8_t>(sn0 >> (i * 8))) {
+                    if (msg.buf[1 + i] != static_cast<uint8_t>(sn0 >> (i * 8))) {
                         match0 = false;
                         break;
                     }
-                    if (msg.data[1 + i] != static_cast<uint8_t>(sn1 >> (i * 8))) {
+                    if (msg.buf[1 + i] != static_cast<uint8_t>(sn1 >> (i * 8))) {
                         match1 = false;
                         break;
                     }
                 }
-                uint8_t new_node_id = msg.data[0];
+                uint8_t new_node_id = msg.buf[0];
                 if (match0) {
                     axes[0].config_.can.node_id = new_node_id;
                 }
@@ -312,8 +312,7 @@ bool CANSimple::get_version_callback(const Axis& axis) {
     txmsg.len = 8;
 
     // Format expected by Python can_config.py _version_check:
-    //_, hw_product_line, hw_version, hw_variant, fw_major, fw_minor, fw_revision, fw_unreleased = \
-    //    struct.unpack('<BBBBBBBB', msg.data)
+    //_, hw_product_line, hw_version, hw_variant, fw_major, fw_minor, fw_revision, fw_unreleased = struct.unpack('<BBBBBBBB', msg.data)
     //hw_version_str = f"{hw_product_line}.{hw_version}.{hw_variant}"
     //fw_version_str = f"{fw_major}.{fw_minor}.{fw_revision}"
     txmsg.buf[0] = odrv.hw_version_major_;                     // hw_product_line
