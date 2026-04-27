@@ -11,6 +11,13 @@ import re
 import sys
 from collections import OrderedDict
 
+def parse_hw_version(hw_version_str):
+    """Parse hw_version string like 'v3.6-56V' into '3.6.56'."""
+    m = re.match(r'v(\d+)\.(\d+)-(\d+)V', hw_version_str)
+    if m:
+        return '{}.{}.{}'.format(m.group(1), m.group(2), m.group(3))
+    return hw_version_str
+
 def read_version_c(path):
     """Parse autogen/version.c produced by tools/odrive/version.py."""
     major = minor = revision = 0
@@ -682,7 +689,8 @@ if args.generate_endpoints:
     # Also write flat_endpoints.json with the same ID system (for Python scripts)
     if args.json_output:
         fw_version = args.fw_version or read_version_c(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'Firmware', 'autogen', 'version.c')) or '0.0.0'
-        hw_version = args.hw_version or userdata.get('hw_version') or '0.0.0'
+        raw_hw_version = args.hw_version or userdata.get('hw_version') or '0.0.0'
+        hw_version = parse_hw_version(raw_hw_version)
         flat = {'endpoints': {}, 'fw_version': fw_version, 'hw_version': hw_version}
         # Flatten hierarchical embedded_endpoint_definitions tree into full paths
         def flatten_tree(tree, prefix=''):
