@@ -24,7 +24,15 @@ def version_str_to_tuple(version_string):
             (re.sub(regex, r"\4", version_string) != ""))
 
 
-def get_version_from_git():
+def parse_version_string(version_string):
+    """Parse a version string like '0.5.7' or '0.5.7-dev' into (major, minor, revision, unreleased)."""
+    m = re.match(r'(\d+)\.(\d+)\.(\d+)(.*)', version_string)
+    if not m:
+        raise ValueError("invalid version string: " + version_string)
+    return (int(m.group(1)), int(m.group(2)), int(m.group(3)), m.group(4) != '')
+
+
+def get_version_from_git(fallback=None):
     script_dir = os.path.dirname(os.path.realpath(__file__))
     try:
         # Determine the current git commit version
@@ -40,6 +48,9 @@ def get_version_from_git():
 
     except Exception as ex:
         print(ex)
+        if fallback:
+            major, minor, revision, unreleased = parse_version_string(fallback)
+            return fallback, major, minor, revision, unreleased
         return "[unknown version]", 0, 0, 0, 1
 
 def get_version_str(git_only=False, is_post_release=False, bump_rev=False, release_override=False):
@@ -72,10 +83,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Version Dump\n')
     parser.add_argument("--output", type=argparse.FileType('w'), default='-',
                         help="C header output file")
-    
+    parser.add_argument("--default-version", type=str, default=None,
+                        help="version to use when git tags are not available (e.g. '0.5.7-dev')")
+
     args = parser.parse_args()
 
-    git_name, major, minor, revision, unreleased = get_version_from_git()
+    git_name, major, minor, revision, unreleased = get_version_from_git(fallback=args.default_version)
     print('Firmware version {}.{}.{}{} ({})'.format(
         major, minor, revision, '-dev' if unreleased else '',
         git_name))
