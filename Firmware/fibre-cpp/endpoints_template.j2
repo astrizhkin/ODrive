@@ -40,7 +40,7 @@ static void get_property(Introspectable& result, size_t idx) {
 [%- if endpoint.function.name == 'exchange' and endpoint.in_bindings | list == ['obj'] %]
         case [[endpoint.id]]: { [[(endpoint.in_bindings['obj'] + '$') | replace(')$', ', &result.storage_)')]]; result.type_info_ = &FibrePropertyTypeInfo<[[endpoint.function.in['obj'].type.c_name]]>::singleton; } break;
 [%- elif endpoint.function.name == 'read' and endpoint.in_bindings | list == ['obj'] %]
-        case [[endpoint.id]]: { [[(endpoint.in_bindings['obj'] + '$') | replace(')$', ', &result.storage_)')]]; result.type_info_ = &FibrePropertyTypeInfo<[[endpoint.function.out['obj'].type.c_name]]>::singleton; } break;
+        case [[endpoint.id]]: { [[(endpoint.in_bindings['obj'] + '$') | replace(')$', ', &result.storage_)')]]; result.type_info_ = &FibrePropertyTypeInfo<[[endpoint.function.in['obj'].type.c_name]]>::singleton; } break;
 [%- endif %]
 [%- endfor %]
         default: break;
