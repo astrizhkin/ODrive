@@ -425,6 +425,18 @@ interfaces:
           baud_rate: {type: uint32, c_setter: 'set_baud_rate'}
           protocol:
             type: Protocol
+      tx_count:
+        type: readonly uint32
+        doc: Total number of CAN messages successfully transmitted.
+      tx_dropped_count:
+        type: readonly uint32
+        doc: Number of CAN messages dropped due to full TX mailbox.
+      rx_in_count:
+        type: readonly uint32
+        doc: Total number of CAN messages received.
+      rx_process_count:
+        type: readonly uint32
+        doc: Total number of CAN messages passed the filter for processing.
 
   ODrive.Endpoint:
     c_is_class: False

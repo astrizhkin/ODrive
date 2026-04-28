@@ -103,6 +103,8 @@ void ODriveCAN::process_rx_fifo(uint32_t fifo) {
         rxmsg.len = header.DLC;
         rxmsg.rtr = header.RTR;
 
+        ++rx_in_count_;
+
         // TODO: this could be optimized with an ahead-of-time computed
         // index-to-filter map
 
@@ -119,6 +121,7 @@ void ODriveCAN::process_rx_fifo(uint32_t fifo) {
             continue;
         }
 
+        ++rx_process_count_;
         it->callback(it->ctx, rxmsg);
     }
 }
@@ -138,11 +141,19 @@ bool ODriveCAN::send_message(const can_Message_t &txmsg) {
     header.TransmitGlobalTime = FunctionalState::DISABLE;
 
     uint32_t retTxMailbox = 0;
+
     if (!HAL_CAN_GetTxMailboxesFreeLevel(handle_)) {
+        tx_dropped_count_++;
         return false;
     }
-    
-    return HAL_CAN_AddTxMessage(handle_, &header, (uint8_t*)txmsg.buf, &retTxMailbox) == HAL_OK;
+
+    bool success = HAL_CAN_AddTxMessage(handle_, &header, (uint8_t*)txmsg.buf, &retTxMailbox) == HAL_OK;
+    if (success) { 
+	    tx_count_++;
+    } else {
+        tx_dropped_count_++;
+    }
+    return success;
 }
 
 //void ODriveCAN::set_error(Error error) {
