@@ -37,10 +37,11 @@ public:
     Error error_ = ERROR_NONE;
 
     // Statistics counters (exposed as read-only endpoints)
-    volatile uint32_t tx_count_ = 0;
-    volatile uint32_t tx_dropped_count_ = 0;
-    volatile uint32_t rx_in_count_ = 0;
-    volatile uint32_t rx_process_count_ = 0;
+    // TODO: counter access require thread safety but we skip it for now
+    uint32_t tx_count_ = 0;
+    uint32_t tx_dropped_count_ = 0;
+    uint32_t rx_in_count_ = 0;
+    uint32_t rx_process_count_ = 0;
 
     Config_t config_;
     CANSimple can_simple_{this};
