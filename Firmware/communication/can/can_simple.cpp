@@ -94,7 +94,7 @@ void CANSimple::handle_rtr_discovery(const can_Message_t& msg) {
     for (int i = 0; i < 6; i++) {
         txmsg0.buf[1 + i] = static_cast<uint8_t>(sn0 >> (i * 8));
     }
-    canbus_->send_message(txmsg0);
+    canbus_->send_message(txmsg0, MailboxOccupation::HIGH);
 
     //second message for axis1
     can_Message_t txmsg1;
@@ -107,7 +107,7 @@ void CANSimple::handle_rtr_discovery(const can_Message_t& msg) {
     for (int i = 0; i < 6; i++) {
         txmsg1.buf[1 + i] = static_cast<uint8_t>(sn1 >> (i * 8));
     }
-    canbus_->send_message(txmsg1);
+    canbus_->send_message(txmsg1, MailboxOccupation::HIGH);
 }
 
 void CANSimple::do_broadcast_command(const can_Message_t& msg) {
@@ -170,7 +170,7 @@ void CANSimple::do_command(Axis& axis, const can_Message_t& msg) {
             break;
         case MSG_GET_MOTOR_ERROR:
             if (msg.rtr || msg.len == 0)
-                get_motor_error_callback(axis);
+                get_motor_error_callback(axis, false);
             break;
         case MSG_CAN_SDO_RX:
             can_sdo_rx_callback(axis, msg);
@@ -193,11 +193,11 @@ void CANSimple::do_command(Axis& axis, const can_Message_t& msg) {
             break;
         case MSG_GET_ENCODER_ESTIMATES:
             if (msg.rtr || msg.len == 0)
-                get_encoder_estimates_callback(axis);
+                get_encoder_estimates_callback(axis, false);
             break;
         case MSG_GET_ENCODER_COUNT:
             if (msg.rtr || msg.len == 0)
-                get_encoder_count_callback(axis);
+                get_encoder_count_callback(axis, false);
             break;
         case MSG_SET_INPUT_POS:
             set_input_pos_callback(axis, msg);
@@ -228,18 +228,18 @@ void CANSimple::do_command(Axis& axis, const can_Message_t& msg) {
             break;
         case MSG_GET_IQ:
             if (msg.rtr || msg.len == 0)
-                get_iq_callback(axis);
+                get_iq_callback(axis, false);
             break;
         case MSG_GET_SENSORLESS_ESTIMATES:
             if (msg.rtr || msg.len == 0)
-                get_sensorless_estimates_callback(axis);
+                get_sensorless_estimates_callback(axis, false);
             break;
         case MSG_RESET_ODRIVE:
             reboot_callback(axis, msg);
             break;
         case MSG_GET_BUS_VOLTAGE_CURRENT:
             if (msg.rtr || msg.len == 0)
-                get_bus_voltage_current_callback(axis);
+                get_bus_voltage_current_callback(axis, false);
             break;
         case MSG_CLEAR_ERRORS:
             clear_errors_callback(axis, msg);
@@ -257,10 +257,10 @@ void CANSimple::do_command(Axis& axis, const can_Message_t& msg) {
             get_adc_voltage_callback(axis, msg);
             break;
         case MSG_GET_CONTROLLER_ENCODER_ERROR:
-            get_controller_encoder_error_callback(axis);
+            get_controller_encoder_error_callback(axis, false);
             break;
         case MSG_GET_TEMPERATURE:
-            get_temperature_callback(axis);
+            get_temperature_callback(axis, false);
             break;
         case MSG_ENTER_DFU_MODE:
             odrv.enter_dfu_mode();
@@ -301,7 +301,7 @@ void CANSimple::can_sdo_rx_callback(Axis& axis, const can_Message_t& msg) {
         txmsg.buf[1] = static_cast<uint8_t>(endpoint_id);
         txmsg.buf[2] = static_cast<uint8_t>(endpoint_id >> 8);
         txmsg.buf[3] = 0;
-        canbus_->send_message(txmsg);
+        canbus_->send_message(txmsg, MailboxOccupation::HIGH);
         return;
     }
 
@@ -312,7 +312,7 @@ void CANSimple::can_sdo_rx_callback(Axis& axis, const can_Message_t& msg) {
 
     // Pack binary value into response (always, for both read and write echo)
     std::memcpy(&txmsg.buf[4], value_buf, 4);
-    canbus_->send_message(txmsg);
+    canbus_->send_message(txmsg, MailboxOccupation::HIGH);
 }
 
 void CANSimple::nmt_callback(const Axis& axis, const can_Message_t& msg) {
@@ -338,14 +338,14 @@ bool CANSimple::get_version_callback(const Axis& axis) {
     txmsg.buf[6] = odrv.fw_version_revision_;                // fw revision
     txmsg.buf[7] = odrv.fw_version_unreleased_;              // fw unreleased
 
-    return canbus_->send_message(txmsg);
+    return canbus_->send_message(txmsg, MailboxOccupation::HIGH);
 }
 
 void CANSimple::estop_callback(Axis& axis, const can_Message_t& msg) {
     axis.error_ |= Axis::ERROR_ESTOP_REQUESTED;
 }
 
-bool CANSimple::get_motor_error_callback(const Axis& axis) {
+bool CANSimple::get_motor_error_callback(const Axis& axis, bool timer_task) {
     can_Message_t txmsg;
     txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
     txmsg.id += MSG_GET_MOTOR_ERROR;  // heartbeat ID
@@ -354,7 +354,7 @@ bool CANSimple::get_motor_error_callback(const Axis& axis) {
 
     can_setSignal(txmsg, axis.motor_.error_, 0, 64, true);
 
-    return canbus_->send_message(txmsg);
+    return canbus_->send_message(txmsg, timer_task ? MailboxOccupation::MED : MailboxOccupation::HIGH);
 }
 
 //bool CANSimple::get_sensorless_error_callback(const Axis& axis) {
@@ -369,7 +369,7 @@ bool CANSimple::get_motor_error_callback(const Axis& axis) {
 //    return canbus_->send_message(txmsg);
 //}
 
-bool CANSimple::get_controller_encoder_error_callback(const Axis& axis) {
+bool CANSimple::get_controller_encoder_error_callback(const Axis& axis, bool timer_task) {
     can_Message_t txmsg;
     txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
     txmsg.id += MSG_GET_CONTROLLER_ENCODER_ERROR;  // heartbeat ID
@@ -379,10 +379,10 @@ bool CANSimple::get_controller_encoder_error_callback(const Axis& axis) {
     can_setSignal(txmsg, axis.controller_.error_, 0, 32, true);
     can_setSignal(txmsg, axis.encoder_.error_, 32, 32, true);
 
-    return canbus_->send_message(txmsg);
+    return canbus_->send_message(txmsg, timer_task ? MailboxOccupation::MED : MailboxOccupation::HIGH);
 }
 
-bool CANSimple::get_temperature_callback(const Axis& axis) {
+bool CANSimple::get_temperature_callback(const Axis& axis, bool timer_task) {
     can_Message_t txmsg;
     txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
     txmsg.id += MSG_GET_TEMPERATURE;
@@ -395,7 +395,7 @@ bool CANSimple::get_temperature_callback(const Axis& axis) {
     can_setSignal<float>(txmsg, axis.motor_.fet_thermistor_.temperature_, 0, 32, true);
     can_setSignal<float>(txmsg, axis.motor_.motor_thermistor_.temperature_, 32, 32, true);
 
-    return canbus_->send_message(txmsg);
+    return canbus_->send_message(txmsg, timer_task ? MailboxOccupation::MED : MailboxOccupation::HIGH);
 }
 
 void CANSimple::set_axis_nodeid_callback(Axis& axis, const can_Message_t& msg) {
@@ -410,7 +410,7 @@ void CANSimple::set_axis_startup_config_callback(Axis& axis, const can_Message_t
     // Not Implemented
 }
 
-bool CANSimple::get_encoder_estimates_callback(const Axis& axis) {
+bool CANSimple::get_encoder_estimates_callback(const Axis& axis, bool timer_task) {
     can_Message_t txmsg;
     txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
     txmsg.id += MSG_GET_ENCODER_ESTIMATES;  // heartbeat ID
@@ -420,10 +420,10 @@ bool CANSimple::get_encoder_estimates_callback(const Axis& axis) {
     can_setSignal<float>(txmsg, axis.controller_.pos_estimate_linear_src_.any().value_or(0.0f), 0, 32, true);
     can_setSignal<float>(txmsg, axis.controller_.vel_estimate_src_.any().value_or(0.0f), 32, 32, true);
 
-    return canbus_->send_message(txmsg);
+    return canbus_->send_message(txmsg, timer_task ? MailboxOccupation::MED : MailboxOccupation::HIGH);
 }
 
-bool CANSimple::get_sensorless_estimates_callback(const Axis& axis) {
+bool CANSimple::get_sensorless_estimates_callback(const Axis& axis, bool timer_task) {
     can_Message_t txmsg;
     txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
     txmsg.id += MSG_GET_SENSORLESS_ESTIMATES;  // heartbeat ID
@@ -435,10 +435,10 @@ bool CANSimple::get_sensorless_estimates_callback(const Axis& axis) {
     can_setSignal<float>(txmsg, axis.sensorless_estimator_.pll_pos_, 0, 32, true);
     can_setSignal<float>(txmsg, axis.sensorless_estimator_.vel_estimate_.any().value_or(0.0f), 32, 32, true);
 
-    return canbus_->send_message(txmsg);
+    return canbus_->send_message(txmsg, timer_task ? MailboxOccupation::MED : MailboxOccupation::HIGH);
 }
 
-bool CANSimple::get_encoder_count_callback(const Axis& axis) {
+bool CANSimple::get_encoder_count_callback(const Axis& axis, bool timer_task) {
     can_Message_t txmsg;
     txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
     txmsg.id += MSG_GET_ENCODER_COUNT;
@@ -447,7 +447,7 @@ bool CANSimple::get_encoder_count_callback(const Axis& axis) {
 
     can_setSignal<int32_t>(txmsg, axis.encoder_.shadow_count_, 0, 32, true);
     can_setSignal<int32_t>(txmsg, axis.encoder_.count_in_cpr_, 32, 32, true);
-    return canbus_->send_message(txmsg);
+    return canbus_->send_message(txmsg, timer_task ? MailboxOccupation::MED : MailboxOccupation::HIGH);
 }
 
 void CANSimple::set_input_pos_callback(Axis& axis, const can_Message_t& msg) {
@@ -508,7 +508,7 @@ void CANSimple::set_vel_gains_callback(Axis& axis, const can_Message_t& msg) {
     axis.controller_.config_.vel_integrator_gain = can_getSignal<float>(msg, 32, 32, true);
 }
 
-bool CANSimple::get_iq_callback(const Axis& axis) {
+bool CANSimple::get_iq_callback(const Axis& axis, bool timer_task) {
     can_Message_t txmsg;
     txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
     txmsg.id += MSG_GET_IQ;
@@ -525,10 +525,10 @@ bool CANSimple::get_iq_callback(const Axis& axis) {
     can_setSignal<float>(txmsg, Idq_setpoint->second, 0, 32, true);
     can_setSignal<float>(txmsg, axis.motor_.current_control_.Iq_measured_, 32, 32, true);
 
-    return canbus_->send_message(txmsg);
+    return canbus_->send_message(txmsg, timer_task ? MailboxOccupation::MED : MailboxOccupation::HIGH);
 }
 
-bool CANSimple::get_bus_voltage_current_callback(const Axis& axis) {
+bool CANSimple::get_bus_voltage_current_callback(const Axis& axis, bool timer_task) {
     can_Message_t txmsg;
 
     txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
@@ -541,7 +541,7 @@ bool CANSimple::get_bus_voltage_current_callback(const Axis& axis) {
     can_setSignal<float>(txmsg, vbus_voltage, 0, 32, true);
     can_setSignal<float>(txmsg, ibus_, 32, 32, true);
 
-    return canbus_->send_message(txmsg);
+    return canbus_->send_message(txmsg, timer_task ? MailboxOccupation::MED : MailboxOccupation::HIGH);
 }
 
 bool CANSimple::get_adc_voltage_callback(const Axis& axis, const can_Message_t& msg) {
@@ -556,7 +556,7 @@ bool CANSimple::get_adc_voltage_callback(const Axis& axis, const can_Message_t& 
     if (gpio_num < GPIO_COUNT) {
         auto voltage = get_adc_voltage(get_gpio(gpio_num));
         can_setSignal<float>(txmsg, voltage, 0, 32, true);
-        return canbus_->send_message(txmsg);
+        return canbus_->send_message(txmsg, MailboxOccupation::HIGH);
     } else {
         return false;
     }
@@ -599,7 +599,7 @@ uint32_t CANSimple::service_stack() {
     struct periodic {
         const uint32_t& rate;
         uint32_t& last_time;
-        bool (CANSimple::* callback)(const Axis& axis);
+        bool (CANSimple::* callback)(const Axis& axis, bool timer_task);
     };
 
     for (auto& axis : axes) {
@@ -620,7 +620,7 @@ uint32_t CANSimple::service_stack() {
             for (auto& msg : periodics) {
                 if (msg.rate > 0) {
                     if ((now - msg.last_time) >= msg.rate) {
-                        if (std::invoke(msg.callback, this, axis)) {
+                        if (std::invoke(msg.callback, this, axis, true)) {
                             msg.last_time = now;
                         }
                     }
@@ -635,7 +635,7 @@ uint32_t CANSimple::service_stack() {
     return nextServiceTime;
 }
 
-bool CANSimple::send_heartbeat(const Axis& axis) {
+bool CANSimple::send_heartbeat(const Axis& axis, bool timer_task) {
     can_Message_t txmsg;
     txmsg.id = axis.config_.can.node_id << NUM_CMD_ID_BITS;
     txmsg.id += MSG_ODRIVE_HEARTBEAT;  // heartbeat ID
@@ -660,5 +660,5 @@ bool CANSimple::send_heartbeat(const Axis& axis) {
     can_setSignal(txmsg, encoderFlags, 48, 8, true);
     can_setSignal(txmsg, controllerFlags, 56, 8, true);
 
-    return canbus_->send_message(txmsg);
+    return canbus_->send_message(txmsg, timer_task ? MailboxOccupation::MED : MailboxOccupation::HIGH);
 }

@@ -9,6 +9,13 @@ struct MsgIdFilterSpecs {
     uint32_t mask;
 };
 
+typedef enum 
+{
+  LOW = 1, //all mailboxes must be free to send the message
+  MED = 2, //at least 2 mailboxes must be free to send the message
+  HIGH = 3 //at least mailbox must be free to send the message
+} MailboxOccupation;
+
 class CanBusBase {
 public:
     typedef void(*on_can_message_cb_t)(void* ctx, const can_Message_t& message);
@@ -20,7 +27,7 @@ public:
      * @returns: true on success or false otherwise (e.g. if the send queue is
      * full).
      */
-    virtual bool send_message(const can_Message_t& message) = 0;
+    virtual bool send_message(const can_Message_t& message, MailboxOccupation mbo) = 0;
 
     /**
      * @brief Registers a callback that will be invoked for every incoming CAN

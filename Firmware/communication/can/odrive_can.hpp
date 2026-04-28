@@ -36,13 +36,6 @@ public:
 
     Error error_ = ERROR_NONE;
 
-    // Statistics counters (exposed as read-only endpoints)
-    // TODO: counter access require thread safety but we skip it for now
-    uint32_t tx_count_ = 0;
-    uint32_t tx_dropped_count_ = 0;
-    uint32_t rx_in_count_ = 0;
-    uint32_t rx_process_count_ = 0;
-
     Config_t config_;
     CANSimple can_simple_{this};
 
@@ -62,7 +55,7 @@ private:
     void can_server_thread();
     bool set_baud_rate(uint32_t baud_rate);
     void process_rx_fifo(uint32_t fifo);
-    bool send_message(const can_Message_t& message) final;
+    bool send_message(const can_Message_t& message, MailboxOccupation mbo) final;
     bool subscribe(const MsgIdFilterSpecs& filter, on_can_message_cb_t callback, void* ctx, CanSubscription** handle) final;
     bool unsubscribe(CanSubscription* handle) final;
 

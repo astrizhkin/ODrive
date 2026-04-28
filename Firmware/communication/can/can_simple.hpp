@@ -51,7 +51,7 @@ class CANSimple {
    private:
 
     bool renew_subscription(size_t i);
-    bool send_heartbeat(const Axis& axis);
+    bool send_heartbeat(const Axis& axis, bool timer_task);
 
     void handle_can_message(const can_Message_t& msg);
     void handle_can_broadcast_message(const can_Message_t& msg);
@@ -62,17 +62,17 @@ class CANSimple {
     
     // Get functions (msg.rtr bit must be set)
     bool get_version_callback(const Axis& axis);
-    bool get_motor_error_callback(const Axis& axis);
-    bool get_controller_encoder_error_callback(const Axis& axis);
+    bool get_motor_error_callback(const Axis& axis, bool timer_task);
+    bool get_controller_encoder_error_callback(const Axis& axis, bool timer_task);
 //    bool get_sensorless_error_callback(const Axis& axis);
-    bool get_encoder_estimates_callback(const Axis& axis);
-    bool get_encoder_count_callback(const Axis& axis);
-    bool get_iq_callback(const Axis& axis);
-    bool get_sensorless_estimates_callback(const Axis& axis);
-    bool get_bus_voltage_current_callback(const Axis& axis);
+    bool get_encoder_estimates_callback(const Axis& axis, bool timer_task);
+    bool get_encoder_count_callback(const Axis& axis, bool timer_task);
+    bool get_iq_callback(const Axis& axis, bool timer_task);
+    bool get_sensorless_estimates_callback(const Axis& axis, bool timer_task);
+    bool get_bus_voltage_current_callback(const Axis& axis, bool timer_task);
     // msg.rtr bit must NOT be set
     bool get_adc_voltage_callback(const Axis& axis, const can_Message_t& msg);
-    bool get_temperature_callback(const Axis& axis);
+    bool get_temperature_callback(const Axis& axis, bool timer_task);
 
     // Set functions
     static void set_axis_nodeid_callback(Axis& axis, const can_Message_t& msg);

@@ -169,6 +169,17 @@ interfaces:
               addr_match_cnt: readonly uint32
               rx_cnt: readonly uint32
               error_cnt: readonly uint32
+          can:
+            c_is_class: False
+            attributes:
+              tx_low_reject_cnt: readonly uint32
+              tx_med_reject_cnt: readonly uint32
+              tx_high_reject_cnt: readonly uint32
+              tx_process_cnt: readonly uint32
+              rx_input_cnt: readonly uint32
+              rx_process_cnt: readonly uint32
+              can_error_cnt: readonly uint32
+
       user_config_loaded: readonly uint32
       misconfigured:
         # TODO: make this a system error
@@ -425,18 +436,6 @@ interfaces:
           baud_rate: {type: uint32, c_setter: 'set_baud_rate'}
           protocol:
             type: Protocol
-      tx_count:
-        type: readonly uint32
-        doc: Total number of CAN messages successfully transmitted.
-      tx_dropped_count:
-        type: readonly uint32
-        doc: Number of CAN messages dropped due to full TX mailbox.
-      rx_in_count:
-        type: readonly uint32
-        doc: Total number of CAN messages received.
-      rx_process_count:
-        type: readonly uint32
-        doc: Total number of CAN messages passed the filter for processing.
 
   ODrive.Endpoint:
     c_is_class: False

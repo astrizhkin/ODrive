@@ -5,11 +5,13 @@
 
 #include "freertos_vars.h"
 #include "utils.hpp"
+#include <communication/interface_can.hpp>
 
 // Safer context handling via maps instead of arrays
 // #include <unordered_map>
 // std::unordered_map<CAN_HandleTypeDef *, ODriveCAN *> ctxMap;
 
+CANStats_t can_stats_;
 
 bool ODriveCAN::apply_config() {
     config_.parent = this;
@@ -51,15 +53,21 @@ void ODriveCAN::can_server_thread() {
 
     for (;;) {
         uint32_t status = HAL_CAN_GetError(handle_);
+        if (status!=HAL_CAN_ERROR_NONE) {
+            can_stats_.can_error_cnt++;
+        }
         if (status == HAL_CAN_ERROR_NONE) {
             uint32_t next_service_time = UINT32_MAX;
 
+            //first process incoming messages and schedule responses
+            process_rx_fifo(CAN_RX_FIFO0);
+            process_rx_fifo(CAN_RX_FIFO1);
+
+            //second produce periodic messages
             if (protocol & PROTOCOL_SIMPLE) {
                 next_service_time = std::min(can_simple_.service_stack(), next_service_time);
             }
 
-            process_rx_fifo(CAN_RX_FIFO0);
-            process_rx_fifo(CAN_RX_FIFO1);
             HAL_CAN_ActivateNotification(handle_, CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO1_MSG_PENDING | CAN_IT_TX_MAILBOX_EMPTY);
 
             // wait at least 1ms to prevent busy-spin on failed sends
@@ -103,7 +111,7 @@ void ODriveCAN::process_rx_fifo(uint32_t fifo) {
         rxmsg.len = header.DLC;
         rxmsg.rtr = header.RTR;
 
-        ++rx_in_count_;
+        can_stats_.rx_input_cnt++;
 
         // TODO: this could be optimized with an ahead-of-time computed
         // index-to-filter map
@@ -121,14 +129,15 @@ void ODriveCAN::process_rx_fifo(uint32_t fifo) {
             continue;
         }
 
-        ++rx_process_count_;
+        can_stats_.rx_process_cnt++;
         it->callback(it->ctx, rxmsg);
     }
 }
 
 // Send a CAN message on the bus
-bool ODriveCAN::send_message(const can_Message_t &txmsg) {
+bool ODriveCAN::send_message(const can_Message_t &txmsg, MailboxOccupation mbo) {
     if (HAL_CAN_GetError(handle_) != HAL_CAN_ERROR_NONE) {
+        can_stats_.can_error_cnt++;
         return false;
     }
 
@@ -142,16 +151,24 @@ bool ODriveCAN::send_message(const can_Message_t &txmsg) {
 
     uint32_t retTxMailbox = 0;
 
-    if (!HAL_CAN_GetTxMailboxesFreeLevel(handle_)) {
-        tx_dropped_count_++;
+    uint32_t free_mailboxes = HAL_CAN_GetTxMailboxesFreeLevel(handle_);
+    //free_mailboxes can be 3, 2, 1, 0
+    //mailbox occupation 1 to 3
+    //if 3 at least 1 mailbox must be free, if 2 at least 2 must be free, if 1 all 3 must be free
+    if (3 - free_mailboxes >= mbo) {
+        switch (mbo) {
+            case MailboxOccupation::HIGH: can_stats_.tx_high_reject_cnt++; break;
+            case MailboxOccupation::MED: can_stats_.tx_med_reject_cnt++; break;
+            case MailboxOccupation::LOW: can_stats_.tx_low_reject_cnt++; break;
+        }
         return false;
     }
 
     bool success = HAL_CAN_AddTxMessage(handle_, &header, (uint8_t*)txmsg.buf, &retTxMailbox) == HAL_OK;
     if (success) { 
-	    tx_count_++;
+        can_stats_.tx_process_cnt++;
     } else {
-        tx_dropped_count_++;
+        can_stats_.can_error_cnt++;
     }
     return success;
 }

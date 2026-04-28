@@ -8,6 +8,7 @@
 #include <communication/interface_usb.h>
 #include <communication/interface_i2c.h>
 #include <communication/interface_uart.h>
+#include <communication/interface_can.hpp>
 #include <task_timer.hpp>
 extern "C" {
 #endif
@@ -51,6 +52,7 @@ typedef struct {
 
     USBStats_t& usb = usb_stats_;
     I2CStats_t& i2c = i2c_stats_;
+    CANStats_t& can = can_stats_;    
 } SystemStats_t;
 
 struct PWMMapping_t {
