@@ -36,6 +36,12 @@ public:
 
     Error error_ = ERROR_NONE;
 
+    // Statistics counters (exposed as read-only endpoints)
+    volatile uint32_t tx_count_ = 0;
+    volatile uint32_t tx_dropped_count_ = 0;
+    volatile uint32_t rx_in_count_ = 0;
+    volatile uint32_t rx_process_count_ = 0;
+
     Config_t config_;
     CANSimple can_simple_{this};
 
@@ -63,12 +69,6 @@ private:
     // we don't need that many.
     std::array<ODriveCanSubscription, 8> subscriptions_;
     CAN_HandleTypeDef *handle_ = nullptr;
-
-    // Statistics counters (exposed as read-only endpoints)
-    volatile uint32_t tx_count_ = 0;
-    volatile uint32_t tx_dropped_count_ = 0;
-    volatile uint32_t rx_in_count_ = 0;
-    volatile uint32_t rx_process_count_ = 0;
 };
 
 #endif  // __ODRIVE_CAN_HPP
