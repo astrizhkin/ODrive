@@ -55,9 +55,8 @@ class CANSimple {
 
     void handle_can_message(const can_Message_t& msg);
     void handle_can_broadcast_message(const can_Message_t& msg);
-    void do_broadcast_command(const can_Message_t& msg);
-    void handle_rtr_discovery(const can_Message_t& msg);
 
+    void do_broadcast_command(const can_Message_t& msg);
     void do_command(Axis& axis, const can_Message_t& cmd);
     
     // Get functions (msg.rtr bit must be set)
