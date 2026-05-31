@@ -7,6 +7,7 @@
 * Added Enter DFU Mode command (0x1F) to enter firmware update mode over CAN.
 * Added CAN SDO protocol (0x04/0x05) for generic parameter read/write via SDO, enabling configuration of any parameter exposed in flat_endpoints.json.
 * Added reboot action parameter to Reset ODrive command (0x16) — supports save-to-NVM and erase-config actions.
+* Added `encoder.config.vel_filter_bandwidth` — first-order IIR low-pass filter on the velocity estimate, active for any encoder mode. Attenuates quantization noise from low-resolution encoders without affecting position tracking. Default 0 (disabled), set >0 to enable (15 rad/s recommended for Hall sensors).
 
 ### Changed
 

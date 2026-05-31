@@ -52,6 +52,8 @@ public:
         void set_abs_spi_cs_gpio_pin(uint16_t value) { abs_spi_cs_gpio_pin = value; parent->abs_spi_cs_pin_init(); }
         void set_pre_calibrated(bool value) { pre_calibrated = value; parent->check_pre_calibrated(); }
         void set_bandwidth(float value) { bandwidth = value; parent->update_pll_gains(); }
+        float vel_filter_bandwidth = 0.0f; // [rad/s] IIR LPF on vel_estimate, any encoder mode, 0 to disable
+        void set_vel_filter_bandwidth(float value) { vel_filter_bandwidth = value; }
     };
 
     Encoder(TIM_HandleTypeDef* timer, Stm32Gpio index_gpio,
@@ -105,6 +107,7 @@ public:
     float pos_cpr_counts_ = 0.0f;  // [count]
     float delta_pos_cpr_counts_ = 0.0f;  // [count] phase detector result for debug
     float vel_estimate_counts_ = 0.0f;  // [count/s]
+    float vel_filt_state_ = 0.0f;       // [turn/s] IIR velocity filter state
     float pll_kp_ = 0.0f;   // [count/s / count]
     float pll_ki_ = 0.0f;   // [(count/s^2) / count]
     float calib_scan_response_ = 0.0f; // debug report from offset calib

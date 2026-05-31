@@ -1335,10 +1335,15 @@ interfaces:
           direction: int32
           pre_calibrated: {type: bool, c_setter: set_pre_calibrated}
           enable_phase_interpolation: bool
-          bandwidth: 
+          bandwidth:
             type: float32
             c_setter: set_bandwidth
             unit: rad/s
+          vel_filter_bandwidth:
+            type: float32
+            c_setter: set_vel_filter_bandwidth
+            unit: rad/s
+            brief: Velocity estimate LPF cutoff. Default 0 (disabled), set >0 to enable.
           calib_range: 
             type: float32
             unit: turn

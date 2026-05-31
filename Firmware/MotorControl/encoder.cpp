@@ -798,7 +798,16 @@ bool Encoder::update() {
 
     // Outputs from Encoder for Controller
     pos_estimate_ = pos_estimate_counts_ / (float)config_.cpr;
-    vel_estimate_ = vel_estimate_counts_ / (float)config_.cpr;
+    float raw_vel = vel_estimate_counts_ / (float)config_.cpr;
+    if (config_.vel_filter_bandwidth > 0) {
+        float wc = config_.vel_filter_bandwidth;
+        float alpha = current_meas_period * wc / (1.0f + current_meas_period * wc);
+        vel_filt_state_ += alpha * (raw_vel - vel_filt_state_);
+        vel_estimate_ = vel_filt_state_;
+    } else {
+        vel_estimate_ = raw_vel;
+        vel_filt_state_ = raw_vel;
+    }
     
     // TODO: we should strictly require that this value is from the previous iteration
     // to avoid spinout scenarios. However that requires a proper way to reset
