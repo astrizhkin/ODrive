@@ -30,7 +30,7 @@ public:
         float torque_lim = std::numeric_limits<float>::infinity();           //[Nm]. 
         // Value used to compute shunt amplifier gains
         float requested_current_range = 60.0f; // [A]
-        int32_t gate_driver_peak_current = 0; // 0=1.7A, 1=0.7A, 2=0.25A
+        GateDriverPeakCurrent gate_driver_peak_current = GATE_DRIVER_PEAK_CURRENT_GATE_CURRENT_1_7A;
         float current_control_bandwidth = 1000.0f;  // [rad/s]
         float inverter_temp_limit_lower = 100;
         float inverter_temp_limit_upper = 120;
