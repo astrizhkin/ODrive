@@ -321,7 +321,7 @@ bool Motor::setup() {
     float requested_gain = max_unity_gain_current / config_.requested_current_range; // [V/V]
     
     float actual_gain;
-    if (!gate_driver_.config(requested_gain, &actual_gain))
+    if (!gate_driver_.config(requested_gain, &actual_gain, config_.gate_driver_peak_current))
         return false;
 
     // Values for current controller

@@ -45,7 +45,7 @@ public:
      * In any case changes to the configuration only take effect with a call to
      * init().
      */
-    bool config(float requested_gain, float* actual_gain);
+    bool config(float requested_gain, float* actual_gain, int32_t gate_peak_current_setting);
     
     /**
      * @brief Initializes the gate driver to the configuration prepared with

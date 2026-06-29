@@ -900,6 +900,12 @@ interfaces:
             doc: |
               The minimum phase current range expected to be measured.  This is used to set the current shunt amplifier gains.
               This should be set > `current_lim + curren_lim_margin`, but as low as possible to maximize precision and accuracy of the controller.
+          gate_driver_peak_current:
+            type: GateDriverPeakCurrent
+            doc: |
+              Selects the gate drive peak current of the DRV8301. Lower values
+              reduce dV/dt on the MOSFET gates, reducing EMI and switching noise
+              at the cost of higher switching losses. Only applicable on ODrive v3 (DRV8301).
           current_control_bandwidth: 
             type: float32
             c_setter: set_current_control_bandwidth
@@ -1530,6 +1536,12 @@ valuetypes:
       Stdout: {doc: Output of printf(). Only intended for developers who modify
           ODrive firmware.}
       AsciiAndStdout: {doc: Combination of `Ascii` and `Stdout`.}
+
+  ODrive.Motor.GateDriverPeakCurrent:
+    values:
+      GATE_CURRENT_1_7A: {doc: 1.7 A gate drive peak current (fastest switching, POR default)}
+      GATE_CURRENT_0_7A: {doc: 0.7 A gate drive peak current}
+      GATE_CURRENT_0_25A: {doc: 0.25 A gate drive peak current (slowest switching, lowest EMI)}
 
   ODrive.Can.Protocol:
     flags: 

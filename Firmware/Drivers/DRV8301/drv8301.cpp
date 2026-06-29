@@ -18,7 +18,7 @@ const SPI_InitTypeDef Drv8301::spi_config_ = {
     .CRCPolynomial = 10,
 };
 
-bool Drv8301::config(float requested_gain, float* actual_gain) {
+bool Drv8301::config(float requested_gain, float* actual_gain, int32_t gate_peak_current_setting) {
     // Calculate gain setting: Snap down to have equal or larger range as
     // requested or largest possible range otherwise
 
@@ -45,7 +45,7 @@ bool Drv8301::config(float requested_gain, float* actual_gain) {
         | (0b01 << 4) // OCP_MODE: latch shut down
         | (0b0 << 3) // 6x PWM mode
         | (0b0 << 2) // don't reset latched faults
-        | (0b00 << 0); // gate-drive peak current: 1.7A
+        | ((gate_peak_current_setting & 0x03) << 0); // gate-drive peak current
 
     new_config.control_register_2 =
           (0b0 << 6) // OC_TOFF: cycle by cycle
